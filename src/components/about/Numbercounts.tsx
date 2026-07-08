@@ -30,9 +30,9 @@ const stats = [
 
 // Add your 3 video paths here
 const backgroundVideos = [
-  "/assets/videos/hero2.mp4",
-  "/assets/videos/hero1.mp4",
-  "/assets/videos/hero3.mp4",
+  "https://res.cloudinary.com/dvenligyn/video/upload/v1783548589/hero1_yokvmh.mp4",
+  "https://res.cloudinary.com/dvenligyn/video/upload/v1783548588/hero2_h9ddwy.mp4",
+  "https://res.cloudinary.com/dvenligyn/video/upload/v1783548588/hero3_vya32e.mp4",
 ];
 
 const containerVariants: Variants = {
