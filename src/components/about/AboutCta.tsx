@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function GentleCollaborationCTA() {
   return (
-    <section className="py-32 px-4 md:px-8 bg-[#fcf8fa] relative overflow-hidden">
+    <section className="py-15 px-4 md:px-8 bg-[#fcf8fa] relative overflow-hidden">
       {/* Subtle Background Accent */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-[#316bf3]/5 rounded-full blur-[120px] pointer-events-none" />
 

@@ -90,11 +90,11 @@ export default function SmoothTimeline() {
   return (
     <div
       ref={wrapperRef}
-      className={`relative bg-[#fcf8fa] isolate ${isDesktop ? "min-h-[400vh]" : ""}`}
+      className={`relative bg-[#fcf8fa] isolate ${isDesktop ? "min-h-[300vh]" : ""}`}
     >
       <section
         className={`flex flex-col justify-center py-24 ${
-          isDesktop ? "sticky top-0 h-screen" : ""
+          isDesktop ? "sticky top-10 h-screen" : ""
         }`}
       >
         <div className="mx-auto max-w-7xl px-8 w-full text-center">

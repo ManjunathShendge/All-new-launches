@@ -44,7 +44,7 @@ export default function PremiumContactCTA() {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <section className="bg-[#fcf8fa] py-20 px-4 md:px-12 lg:px-24 flex items-center justify-center font-['Inter']">
+    <section className="bg-[#fcf8fa] py-10 px-4 md:px-12 lg:px-24 flex items-center justify-center font-['Inter']">
       <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         
         {/* LEFT SIDE: Property Bento Gallery */}

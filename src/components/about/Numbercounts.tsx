@@ -119,7 +119,7 @@ export default function AboutStatsSection() {
 
         {/* Dynamic Metric Grid */}
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 lg:gap-8 items-center justify-center mb-16 max-w-5xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3.75 md:gap-4 lg:gap-8 items-center justify-center mb-16 max-w-5xl mx-auto"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"

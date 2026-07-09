@@ -60,7 +60,7 @@ const cardVariants: Variants = {
 
 export default function PremiumTeamSection() {
   return (
-    <section className="py-24 px-4 md:px-8 bg-[#fcf8fa] overflow-hidden">
+    <section className="py-14 px-4 md:px-8 bg-[#fcf8fa] overflow-hidden">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}
