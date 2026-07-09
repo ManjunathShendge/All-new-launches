@@ -75,18 +75,18 @@ export default function Footer() {
             </p>
 
             {/* Newsletter */}
-            <form className="flex gap-3">
+            <form className="flex flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 rounded-xl border border-[#3f465c] bg-[#131b2e] px-4 py-3 text-sm text-white placeholder:text-[#7c839b] outline-none transition focus:border-[#2563EB]"
+                className="min-w-0 flex-1 rounded-xl border border-[#3f465c] bg-[#131b2e] px-4 py-3 text-sm text-white placeholder:text-[#7c839b] outline-none transition focus:border-[#2563EB]"
               />
 
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 type="submit"
-                className="rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+                className="shrink-0 rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
               >
                 Subscribe
               </motion.button>
@@ -185,4 +185,3 @@ export default function Footer() {
     </footer>
   );
 }
-
