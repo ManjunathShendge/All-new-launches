@@ -41,43 +41,10 @@ export default function FAQSection() {
 
   return (
     <section className="w-full bg-[#fcf8fa] py-20 font-['Inter']">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 md:px-12 lg:grid-cols-12 lg:gap-20">
+      <div className="mx-auto flex flex-col gap-12 px-4 md:px-12 lg:grid lg:max-w-7xl lg:grid-cols-12 lg:items-start lg:gap-20">
         
-        {/* Left Column: Context & CTA (Sticky on Desktop) */}
-        <div className="col-span-1 flex flex-col items-start lg:sticky lg:top-30 lg:col-span-5">
-          {/* Chip */}
-          <span className="mb-6 flex items-center gap-1.5 rounded-full bg-[#dbe1ff] px-3 py-1 text-[12px] font-semibold tracking-[0.01em] text-[#003ea8]">
-            <HelpCircle size={14} />
-            Got Questions?
-          </span>
-          
-          {/* Heading & Subheading */}
-          <h2 className="font-['Plus_Jakarta_Sans'] text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-[#1b1b1d] md:text-[48px] md:leading-[1.1]">
-            Frequently Asked Questions
-          </h2>
-          <p className="mt-4 text-[16px] leading-[1.6] text-[#45464d] md:text-[18px]">
-            Find answers to common questions about our platform, listings, and verification process.
-          </p>
-
-          {/* Support CTA Box */}
-          <div className="mt-10 flex w-full flex-col items-start rounded-3xl border border-[#e4e2e4] bg-[#ffffff] p-8 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.05)]">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#dae2fd] text-[#0051d5]">
-              <MessageSquare size={24} />
-            </div>
-            <h3 className="mb-2 font-['Plus_Jakarta_Sans'] text-[20px] font-bold text-[#1b1b1d]">
-              Still have questions?
-            </h3>
-            <p className="mb-6 font-['Inter'] text-[14px] leading-normal text-[#45464d]">
-              Our support team is here to help you with any inquiries.
-            </p>
-            <button className="rounded-lg bg-[#0051d5] px-6 py-3 font-['Inter'] text-[16px] font-semibold text-white transition-all hover:bg-[#003ea8] hover:shadow-[0_4px_14px_rgba(0,81,213,0.39)]">
-              Contact Support
-            </button>
-          </div>
-        </div>
-
-        {/* Right Column: Interactive Accordion List */}
-        <div className="col-span-1 w-full space-y-4 lg:col-span-7">
+        {/* Left Column on Desktop / Middle on Mobile: Interactive Accordion List */}
+        <div className="order-2 w-full space-y-4 lg:order-0 lg:col-span-7">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
 
@@ -124,7 +91,46 @@ export default function FAQSection() {
           })}
         </div>
 
+        {/* Right Column on Desktop / Split on Mobile: Context & Sticky CTA */}
+        <div className="contents lg:sticky lg:top-30 lg:col-span-5 lg:flex lg:flex-col lg:items-start">
+          
+          {/* Header & Subheading (Top on Mobile) */}
+          <div className="order-1 flex flex-col items-start lg:order-0">
+            {/* Chip */}
+            <span className="mb-6 flex items-center gap-1.5 rounded-full bg-[#dbe1ff] px-3 py-1 text-[12px] font-semibold tracking-[0.01em] text-[#003ea8]">
+              <HelpCircle size={14} />
+              Got Questions?
+            </span>
+            
+            {/* Heading & Subheading */}
+            <h2 className="font-['Plus_Jakarta_Sans'] text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-[#1b1b1d] md:text-[48px] md:leading-[1.1]">
+              Frequently Asked Questions
+            </h2>
+            <p className="mt-4 text-[16px] leading-[1.6] text-[#45464d] md:text-[18px]">
+              Find answers to common questions about our platform, listings, and verification process.
+            </p>
+          </div>
+
+          {/* Support CTA Box (Bottom on Mobile) */}
+          <div className="order-3 flex w-full flex-col items-start rounded-3xl border border-[#e4e2e4] bg-[#ffffff] p-8 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.05)] lg:order-0 lg:mt-10">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#dae2fd] text-[#0051d5]">
+              <MessageSquare size={24} />
+            </div>
+            <h3 className="mb-2 font-['Plus_Jakarta_Sans'] text-[20px] font-bold text-[#1b1b1d]">
+              Still have questions?
+            </h3>
+            <p className="mb-6 font-['Inter'] text-[14px] leading-normal text-[#45464d]">
+              Our support team is here to help you with any inquiries.
+            </p>
+            <button className="rounded-lg bg-[#0051d5] px-6 py-3 font-['Inter'] text-[16px] font-semibold text-white transition-all hover:bg-[#003ea8] hover:shadow-[0_4px_14px_rgba(0,81,213,0.39)]">
+              Contact Support
+            </button>
+          </div>
+
+        </div>
+
       </div>
     </section>
   );
 }
+

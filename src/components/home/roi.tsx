@@ -73,7 +73,7 @@ const floatAnimation = (delay: number) => ({
 
 export default function HighROIInvestmentOpportunities() {
   return (
-    <section className="relative min-h-200 w-full overflow-hidden bg-linear-to-br from-[#0F172A] via-[#131B2E] to-[#0F172A] py-24 text-white">
+    <section className="relative min-h-200 w-full overflow-hidden bg-linear-to-br from-[#0F172A] via-[#131B2E] to-[#0F172A] py-24 mt-24 text-white">
       
       {/* BACKGROUND DECORATIVE ELEMENTS (Vector Wireframe Circles from image_6acef4.jpg) */}
       <motion.div 

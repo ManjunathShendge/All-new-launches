@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion, Variants } from "motion/react";
@@ -70,10 +69,10 @@ const containerVariants: Variants = {
 };
 
 const cardVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 35,
-    scale: 0.98
+    scale: 0.98,
   },
   visible: {
     opacity: 1,
@@ -89,9 +88,8 @@ const cardVariants: Variants = {
 
 export default function TrendingLocations() {
   return (
-    <section className="relative overflow-hidden bg-[#F9FAFB] py-24">
+    <section className="relative overflow-hidden bg-[#F9FAFB] py-4">
       <div className="relative mx-auto max-w-(--spacing-container-max) px-6 lg:px-10">
-        
         {/* Header Section */}
         <div className="mb-14 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <motion.div
@@ -114,18 +112,20 @@ export default function TrendingLocations() {
             </p>
           </motion.div>
 
+          {/* Desktop CTA */}
           <motion.a
-            href="#locations"
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            href="/properties"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="group inline-flex shrink-0 items-center gap-1.5 text-label-md font-bold text-[#316BF3] transition-colors hover:text-blue-700"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            whileHover={{ x: 4 }}
+            className="group hidden shrink-0 items-center gap-2 rounded-full border border-[#2563EB] bg-white px-6 py-3 text-sm font-semibold text-[#2563EB] transition-all duration-300 hover:bg-[#2563EB] hover:text-white sm:inline-flex"
           >
-            View All Locations
+            View All Launches
             <ArrowRight
               size={16}
-              className="transition-transform duration-300 group-hover:translate-x-1.5"
+              className="transition-transform duration-300 group-hover:translate-x-1"
             />
           </motion.a>
         </div>
@@ -142,9 +142,9 @@ export default function TrendingLocations() {
             <motion.div
               key={`${location.name}-${i}`}
               variants={cardVariants}
-              whileHover={{ 
+              whileHover={{
                 y: -6,
-                boxShadow: "0 20px 40px rgba(49,107,243,0.08)"
+                boxShadow: "0 20px 40px rgba(49,107,243,0.08)",
               }}
               className="
                 group
@@ -183,7 +183,7 @@ export default function TrendingLocations() {
                     {location.city}
                   </p>
                 </div>
-                
+
                 {/* Trending Context Arrow Pill */}
                 <div className="flex h-9 w-9 items-center justify-center rounded-pill bg-emerald-50 text-emerald-500 transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white group-hover:rotate-12">
                   <TrendingUp size={16} />
@@ -197,7 +197,10 @@ export default function TrendingLocations() {
                     Avg Price
                   </span>
                   <p className="mt-1 text-body-md font-bold text-slate-800 tracking-tight">
-                    {location.price} <span className="text-xs font-normal text-slate-400">avg</span>
+                    {location.price}{" "}
+                    <span className="text-xs font-normal text-slate-400">
+                      avg
+                    </span>
                   </p>
                 </div>
 
@@ -213,7 +216,25 @@ export default function TrendingLocations() {
             </motion.div>
           ))}
         </motion.div>
-
+        {/* Mobile CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-10 flex sm:hidden"
+        >
+          <a
+            href="/properties"
+            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-6 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#1D4ED8]"
+          >
+            View All Launches
+            <ArrowRight
+              size={18}
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
+          </a>
+        </motion.div>
       </div>
     </section>
   );

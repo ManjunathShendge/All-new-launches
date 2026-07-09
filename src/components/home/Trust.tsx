@@ -113,7 +113,7 @@ export default function WhatWeOffer() {
   return (
     <section
       ref={ref}
-      className="relative py-24 px-6 lg:px-10 bg-(--surface) overflow-hidden"
+      className="relative py-4 px-6 lg:px-10 bg-(--surface) overflow-hidden"
     >
       <div className="relative mx-auto max-w-7xl text-center">
         <motion.h2
@@ -131,7 +131,7 @@ export default function WhatWeOffer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="mt-5 mx-auto w-[70%] text-[20px] leading-8 text-muted"
+          className="mx-auto mt-5 w-full md:w-[70%] text-[20px] leading-8 text-muted"
         >
           A platform where we offer multiple listings for leading real estate
           options — exclusive access to premium residential and commercial

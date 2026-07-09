@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight, PlayCircle, X } from "lucide-react";
 
 const VIDEOS = [
   "https://res.cloudinary.com/dvenligyn/video/upload/v1783548589/hero1_yokvmh.mp4",
@@ -13,9 +14,13 @@ const VIDEOS = [
 const TRANSITION_MS = 6500;
 const FADE_DURATION = 1.6;
 
+// Showcase video for the popup modal
+const POPUP_VIDEO_URL = VIDEOS[0]; 
+
 export default function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showFirst, setShowFirst] = useState(true); // which <video> element is "on top"
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   const videoARef = useRef<HTMLVideoElement>(null);
   const videoBRef = useRef<HTMLVideoElement>(null);
@@ -36,13 +41,12 @@ export default function HeroSection() {
   }, []);
 
   // -----------------------------
-  // Video Rotation (crossfade between two persistent <video> tags)
+  // Video Rotation
   // -----------------------------
   useEffect(() => {
     const timer = setInterval(() => {
       const nextIndex = (activeIndex + 1) % VIDEOS.length;
 
-      // Preload + play the video that's about to fade in
       const incomingRef = showFirst ? videoBRef : videoARef;
       if (incomingRef.current) {
         incomingRef.current.src = VIDEOS[nextIndex];
@@ -57,7 +61,7 @@ export default function HeroSection() {
     return () => clearInterval(timer);
   }, [activeIndex, showFirst]);
 
-  // Kick off video B's first preload once on mount, and play video A
+  // Initial setup for background videos
   useEffect(() => {
     if (videoARef.current) {
       videoARef.current.src = VIDEOS[0];
@@ -68,6 +72,29 @@ export default function HeroSection() {
       videoBRef.current.load();
     }
   }, []);
+
+  // -----------------------------
+  // Modal Handlers (Esc key & scroll lock)
+  // -----------------------------
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsVideoModalOpen(false);
+      }
+    };
+
+    if (isVideoModalOpen) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isVideoModalOpen]);
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -167,13 +194,58 @@ export default function HeroSection() {
               />
             </button>
 
-            <button className="group flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 py-4 backdrop-blur-xl transition-all duration-300 hover:bg-white/20">
+            <button
+              onClick={() => setIsVideoModalOpen(true)}
+              className="group flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 py-4 backdrop-blur-xl transition-all duration-300 hover:bg-white/20"
+            >
               <PlayCircle size={18} />
               Watch Video
             </button>
           </motion.div>
         </div>
       </div>
+
+      {/* ---------------- Video Popup Modal ---------------- */}
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsVideoModalOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-5 backdrop-blur-md md:p-20"
+          >
+            {/* Modal Box Container */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside video
+              className="relative aspect-video w-full max-w-6xl overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsVideoModalOpen(false)}
+                className="absolute right-4 top-4 z-10 rounded-full bg-black/60 p-2.5 text-white/80 backdrop-blur-md transition-colors hover:bg-black hover:text-white"
+                aria-label="Close Video"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Popup Video Player */}
+              <video
+                src={POPUP_VIDEO_URL}
+                autoPlay
+                controls
+                playsInline
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
+

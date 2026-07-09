@@ -78,14 +78,15 @@ export default function FeaturedLaunches() {
             </p>
           </motion.div>
 
+          {/* Desktop CTA */}
           <motion.a
-            href="#launches"
+            href="/properties"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
             whileHover={{ x: 4 }}
-            className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary"
+            className="group hidden shrink-0 items-center gap-2 rounded-full border border-[#2563EB] bg-white px-6 py-3 text-sm font-semibold text-[#2563EB] transition-all duration-300 hover:bg-[#2563EB] hover:text-white sm:inline-flex"
           >
             View All Launches
             <ArrowRight
@@ -93,6 +94,7 @@ export default function FeaturedLaunches() {
               className="transition-transform duration-300 group-hover:translate-x-1"
             />
           </motion.a>
+          
         </div>
 
         {/* Cards */}
@@ -208,6 +210,25 @@ hover:shadow-[0_20px_45px_rgba(15,23,42,0.10),0_35px_80px_rgba(15,23,42,0.08)]
           ))}
         </motion.div>
       </div>
+      {/* Mobile CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mt-10 flex sm:hidden"
+          >
+            <a
+              href="/properties"
+              className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-6 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#1D4ED8]"
+            >
+              View All Launches
+              <ArrowRight
+                size={18}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
+            </a>
+          </motion.div>
     </section>
   );
 }
