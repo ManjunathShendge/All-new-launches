@@ -1,9 +1,12 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+
+import { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import ProfileDropdown from "./ProfileDropdown";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -13,22 +16,67 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-export default function Navbar() {
-  const [showNav, setShowNav] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+type Profile = {
+  full_name: string;
+  account_type: "agent" | "owner" | "user";
+  role: "admin" | "user";
+};
 
-  // Handle scroll for hiding/showing navbar
+export default function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const supabase = createClient();
+
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setShowNav(currentScrollY < 80 || currentScrollY < lastScrollY);
-      setLastScrollY(currentScrollY);
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setUser(user);
+
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, account_type, role")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        setProfile(data);
+      }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
+
+      if (!session?.user) {
+        setProfile(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, account_type, role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (data) {
+        setProfile(data);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Lock body scroll when the mobile menu is open
   useEffect(() => {
@@ -42,16 +90,29 @@ export default function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
+  const dashboardRoute = () => {
+    if (!profile) return "/";
+    if (profile.role === "admin") {
+      return "/admin";
+    }
+    if (profile.account_type === "agent") {
+      return "/agent";
+    }
+    if (profile.account_type === "owner") {
+      return "/owner";
+    }
+    return "/profile";
+  };
+
   return (
     <>
-      <header
-        className="fixed left-0 right-0 top-0 z-50 border-b border-white/20 bg-white/60 backdrop-blur-3xl transition-transform duration-300 ease-out"
-        style={{
-          transform: showNav ? "translateY(0)" : "translateY(-100%)",
-        }}
-      >
+      <style jsx global>{`
+        html {
+          scrollbar-gutter: stable;
+        }
+      `}</style>
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/20 bg-white/60 backdrop-blur-3xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 sm:px-8 lg:px-10">
-          
           {/* Logo */}
           <Link href="/" className="relative z-50 flex items-center">
             <Image
@@ -78,19 +139,26 @@ export default function Navbar() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden items-center gap-3 md:flex">
-            <Link
-              href="/login"
-              className="rounded-full border border-slate-300 px-5 py-2 text-sm text-black transition duration-300 hover:bg-slate-100"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/properties"
-              className="rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5"
-            >
-              Get started
-            </Link>
+          <div className="hidden items-center gap-4 md:flex">
+            {!user ? (
+              <>
+                <Link
+                  href="/auth"
+                  className="rounded-full border border-slate-300 px-5 py-2 text-sm text-black transition hover:bg-slate-100"
+                >
+                  Sign In
+                </Link>
+
+                <Link
+                  href="/properties"
+                  className="rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5"
+                >
+                  Get Started
+                </Link>
+              </>
+            ) : (
+              <ProfileDropdown />
+            )}
           </div>
 
           {/* Mobile Menu Toggle (CSS Animated Hamburger) */}
@@ -121,45 +189,99 @@ export default function Navbar() {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-white/95 backdrop-blur-2xl transition-all duration-500 ease-in-out md:hidden ${
+        className={`fixed inset-0 z-40 overflow-y-auto bg-white/95 backdrop-blur-2xl transition-all duration-500 ease-in-out md:hidden ${
           isMobileMenuOpen
             ? "visible translate-y-0 opacity-100"
             : "invisible -translate-y-10 opacity-0"
         }`}
       >
-        {/* Changed justify-center to justify-start and items-center to items-start */}
-        <div className="flex h-full flex-col items-start justify-start px-8 pb-12 pt-32">
-          
-          {/* Increased text size to text-3xl and changed to flex-col with start alignment */}
-          <nav className="flex w-full flex-col items-start gap-6 text-3xl font-semibold">
+        <div className="flex min-h-full flex-col px-8 pb-12 pt-32">
+          {/* Navigation */}
+          <nav className="flex w-full flex-col gap-6 text-3xl font-semibold">
             {navLinks.map((link) => (
               <Link
-                key={link.label}
+                key={link.href}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-left py-2 text-slate-600 transition-colors hover:text-black"
+                className="w-full py-2 text-slate-700 transition hover:text-black"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Left-aligned button container with full-width buttons for easy tapping */}
-          <div className="mt-12 flex w-full flex-col gap-4">
-            <Link
-              href="/login"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full rounded-full border border-slate-300 px-6 py-4 text-center text-lg font-medium text-black transition hover:bg-slate-50"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/properties"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-6 py-4 text-center text-lg font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition active:scale-95"
-            >
-              Get started
-            </Link>
+          {/* Auth Section */}
+          <div className="mt-12 border-t border-slate-200 pt-8">
+            {!user ? (
+              <div className="flex flex-col gap-4">
+                <Link
+                  href="/auth"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full rounded-full border border-slate-300 px-6 py-4 text-center text-lg font-medium transition hover:bg-slate-50"
+                >
+                  Sign In
+                </Link>
+
+                <Link
+                  href="/properties"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-6 py-4 text-center text-lg font-semibold text-slate-950"
+                >
+                  Get Started
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                {/* Profile */}
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-5 text-xl font-medium text-slate-800"
+                >
+                  <span>Profile</span>
+                  <span>›</span>
+                </Link>
+
+                {/* Dashboard */}
+                <Link
+                  href={dashboardRoute()}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between border-t border-slate-100 py-5 text-xl font-medium text-slate-800"
+                >
+                  <span>
+                    {profile?.role === "admin"
+                      ? "Admin Dashboard"
+                      : profile?.account_type === "user"
+                      ? "Profile"
+                      : "Dashboard"}
+                  </span>
+                  <span>›</span>
+                </Link>
+
+                {/* Notifications */}
+                <Link
+                  href="/notifications"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between border-t border-slate-100 py-5 text-xl font-medium text-slate-800"
+                >
+                  <span>Notifications</span>
+                  <span>›</span>
+                </Link>
+
+                {/* Logout */}
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setIsMobileMenuOpen(false);
+                    window.location.href = "/";
+                  }}
+                  className="flex items-center justify-between border-t border-slate-100 py-5 text-left text-xl font-medium text-red-600"
+                >
+                  <span>Logout</span>
+                  <span>›</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
