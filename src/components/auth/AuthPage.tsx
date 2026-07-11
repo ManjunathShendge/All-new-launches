@@ -585,7 +585,7 @@ export default function AuthPage() {
             <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold tracking-wider uppercase mb-4 border border-white/20">
               Premium Listings
             </div>
-            <h3 className="text-4xl font-bold mb-4 leading-tight">
+            <h3 className="text-4xl font-bold mb-4 leading-tight text-white">
               Elevate your <br /> real estate portfolio.
             </h3>
             <p className="text-slate-200 text-sm leading-relaxed max-w-md">
