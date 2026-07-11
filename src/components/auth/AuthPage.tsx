@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Mail,
   Lock,
@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthController } from "@/lib/controllers/auth.controller";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { checkPasswordStrength } from "@/lib/utils/password-strength";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -28,6 +31,12 @@ export default function AuthPage() {
 
   const [error, setError] = useState("");
 
+  const [success, setSuccess] = useState("");
+
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -37,6 +46,8 @@ export default function AuthPage() {
     password: "",
     rememberMe: false,
   });
+
+  const passwordStrength = checkPasswordStrength(formData.password);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -100,7 +111,12 @@ export default function AuthPage() {
           rememberMe: false,
         });
 
-        alert("Account created successfully. Please login.");
+        // Show success message instead of alert
+        setError("");
+        setSuccess(
+          response.message ??
+            "We've sent a verification email. Please verify your email before logging in.",
+        );
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -108,6 +124,53 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setResendingEmail(true);
+
+    const { error } = await AuthController.resendVerificationEmail(
+      formData.email,
+    );
+
+    setResendingEmail(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setSuccess("Verification email has been sent successfully.");
+    setCountdown(60);
+    setCanResend(false);
+  };
+
+  useEffect(() => {
+    if (!success || isLogin) return;
+
+    setCountdown(60);
+    setCanResend(false);
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setCanResend(true);
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [success, isLogin]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8">
@@ -117,21 +180,30 @@ export default function AuthPage() {
           {/* Custom Toggle Switch */}
           <div className="flex bg-gray-100 p-1 rounded-xl mb-10 w-fit mx-auto md:mx-0">
             <button
+              type="button"
+              disabled={loading}
               onClick={() => setIsLogin(true)}
               className={`px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                 isLogin
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-gray-500 hover:text-slate-900"
+              } ${
+                loading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
               }`}
             >
               Log In
             </button>
+
             <button
+              type="button"
+              disabled={loading}
               onClick={() => setIsLogin(false)}
               className={`px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                 !isLogin
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-gray-500 hover:text-slate-900"
+              } ${
+                loading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
               }`}
             >
               Sign Up
@@ -314,6 +386,74 @@ export default function AuthPage() {
               </div>
             </div>
 
+            {/* Password Strength */}
+            {!isLogin && formData.password && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-300">
+                {/* Header */}
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Password Strength
+                  </span>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      passwordStrength.label === "Strong"
+                        ? "bg-green-100 text-green-700"
+                        : passwordStrength.label === "Medium"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {passwordStrength.label}
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      passwordStrength.label === "Strong"
+                        ? "bg-green-500"
+                        : passwordStrength.label === "Medium"
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                    }`}
+                    style={{
+                      width: `${(passwordStrength.score / 5) * 100}%`,
+                    }}
+                  />
+                </div>
+
+                {/* Checklist */}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Requirement
+                    ok={passwordStrength.checks.length}
+                    text="8+ Characters"
+                  />
+
+                  <Requirement
+                    ok={passwordStrength.checks.uppercase}
+                    text="Uppercase Letter"
+                  />
+
+                  <Requirement
+                    ok={passwordStrength.checks.lowercase}
+                    text="Lowercase Letter"
+                  />
+
+                  <Requirement
+                    ok={passwordStrength.checks.number}
+                    text="One Number"
+                  />
+
+                  <Requirement
+                    ok={passwordStrength.checks.special}
+                    text="Special Character"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* LOGIN EXCLUSIVE - Remember Me & Forgot Password */}
             {isLogin && (
               <div className="flex items-center justify-between pt-2">
@@ -328,7 +468,7 @@ export default function AuthPage() {
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
                 <a
-                  href="#"
+                  href="/forgot-password"
                   className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                 >
                   Forgot Password?
@@ -344,17 +484,65 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* Success message */}
+
+            {success && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                {success}
+              </div>
+            )}
+
+            {!isLogin && success && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                {!canResend ? (
+                  <>
+                    <p className="text-sm text-slate-600">
+                      Didn't receive the verification email?
+                    </p>
+
+                    <p className="mt-2 text-sm font-semibold text-slate-800">
+                      You can resend it in
+                      <span className="text-blue-600"> {countdown}s</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Didn't receive the verification email?
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendingEmail}
+                      className="font-semibold text-blue-600 transition hover:text-blue-700 disabled:opacity-50"
+                    >
+                      {resendingEmail
+                        ? "Sending..."
+                        : "Resend Verification Email"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3.5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 mt-4 shadow-lg shadow-slate-900/20"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#111827] py-4 font-semibold text-white transition-all duration-300 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
             >
+              {loading && <ArrowPathIcon className="h-5 w-5 animate-spin" />}
+
               {loading
-                ? "Please wait..."
+                ? isLogin
+                  ? "Signing In..."
+                  : "Creating Account..."
                 : isLogin
                   ? "Log In"
                   : "Create Account"}
-              <ArrowRight className="w-4 h-4" />
+
+              {!loading && <ArrowRight className="h-5 w-5" />}
             </button>
           </form>
 
@@ -426,4 +614,27 @@ export default function AuthPage() {
       </div>
     </div>
   );
+  function Requirement({ ok, text }: { ok: boolean; text: string }) {
+    return (
+      <div
+        className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-all ${
+          ok ? "border-green-200 bg-green-50" : "border-slate-200 bg-white"
+        }`}
+      >
+        {ok ? (
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+        ) : (
+          <div className="h-4 w-4 rounded-full border-2 border-slate-300" />
+        )}
+
+        <span
+          className={`text-sm ${
+            ok ? "font-medium text-green-700" : "text-slate-600"
+          }`}
+        >
+          {text}
+        </span>
+      </div>
+    );
+  }
 }

@@ -1,19 +1,13 @@
 import { AuthService } from "@/lib/services/auth.service";
 import { AuthValidator } from "@/lib/validators/auth.validator";
 
-import {
-  AuthResponse,
-  LoginData,
-  SignupData,
-} from "@/types/auth.types";
+import { AuthResponse, LoginData, SignupData } from "@/types/auth.types";
 
 export class AuthController {
   /**
    * Login
    */
-  static async login(
-    data: LoginData
-  ): Promise<AuthResponse> {
+  static async login(data: LoginData): Promise<AuthResponse> {
     const validation = AuthValidator.validateLogin(data);
 
     if (!validation.valid) {
@@ -29,9 +23,7 @@ export class AuthController {
   /**
    * Signup
    */
-  static async signup(
-    data: SignupData
-  ): Promise<AuthResponse> {
+  static async signup(data: SignupData): Promise<AuthResponse> {
     const validation = AuthValidator.validateSignup(data);
 
     if (!validation.valid) {
@@ -56,6 +48,13 @@ export class AuthController {
    */
   static async forgotPassword(email: string) {
     return await AuthService.forgotPassword(email);
+  }
+
+  /**
+   * Resend Verification Email
+   */
+  static async resendVerificationEmail(email: string) {
+    return await AuthService.resendVerificationEmail(email);
   }
 
   /**

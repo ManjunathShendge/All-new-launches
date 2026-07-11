@@ -7,6 +7,10 @@ import Image from "next/image";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import ProfileDropdown from "./ProfileDropdown";
+import {
+  getDashboardRoute,
+  getDashboardLabel,
+} from "@/lib/utils/dashboard";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -25,10 +29,14 @@ type Profile = {
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<{
+    account_type: "user" | "agent" | "owner";
+    role: "admin" | "user";
+  } | null>(null);
 
   const supabase = createClient();
 
+   
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -37,16 +45,16 @@ export default function Navbar() {
 
       setUser(user);
 
-      if (!user) return;
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("account_type, role")
+          .eq("id", user.id)
+          .single();
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, account_type, role")
-        .eq("id", user.id)
-        .single();
-
-      if (data) {
         setProfile(data);
+      } else {
+        setProfile(null);
       }
     };
 
@@ -57,25 +65,20 @@ export default function Navbar() {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
 
-      if (!session?.user) {
-        setProfile(null);
-        return;
-      }
+      if (session?.user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("account_type, role")
+          .eq("id", session.user.id)
+          .single();
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, account_type, role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (data) {
         setProfile(data);
+      } else {
+        setProfile(null);
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   // Lock body scroll when the mobile menu is open
@@ -149,12 +152,12 @@ export default function Navbar() {
                   Sign In
                 </Link>
 
-                <Link
+                {/* <Link
                   href="/properties"
                   className="rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5"
                 >
                   Get Started
-                </Link>
+                </Link> */}
               </>
             ) : (
               <ProfileDropdown />
@@ -222,43 +225,25 @@ export default function Navbar() {
                   Sign In
                 </Link>
 
-                <Link
+                {/* <Link
                   href="/properties"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full rounded-full bg-linear-to-r from-cyan-400 via-sky-300 to-blue-500 px-6 py-4 text-center text-lg font-semibold text-slate-950"
                 >
                   Get Started
-                </Link>
+                </Link> */}
               </div>
             ) : (
               <div className="flex flex-col">
-                {/* Profile */}
                 <Link
-                  href="/profile"
+                  href={getDashboardRoute(profile)}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center justify-between py-5 text-xl font-medium text-slate-800"
                 >
-                  <span>Profile</span>
+                  <span>{getDashboardLabel(profile)}</span>
                   <span>›</span>
                 </Link>
 
-                {/* Dashboard */}
-                <Link
-                  href={dashboardRoute()}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between border-t border-slate-100 py-5 text-xl font-medium text-slate-800"
-                >
-                  <span>
-                    {profile?.role === "admin"
-                      ? "Admin Dashboard"
-                      : profile?.account_type === "user"
-                      ? "Profile"
-                      : "Dashboard"}
-                  </span>
-                  <span>›</span>
-                </Link>
-
-                {/* Notifications */}
                 <Link
                   href="/notifications"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -268,7 +253,6 @@ export default function Navbar() {
                   <span>›</span>
                 </Link>
 
-                {/* Logout */}
                 <button
                   onClick={async () => {
                     await supabase.auth.signOut();

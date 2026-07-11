@@ -9,6 +9,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import {
+  getDashboardRoute,
+  getDashboardLabel,
+} from "@/lib/utils/dashboard";
 
 type Profile = {
   full_name: string;
@@ -53,35 +57,7 @@ export default function ProfileDropdown() {
     router.refresh();
   };
 
-  const getDashboardRoute = () => {
-    console.log("Current Profile:", profile);
-
-    if (!profile) {
-      console.log("Profile is NULL");
-      return "/";
-    }
-
-    if (profile.role === "admin") {
-      return "/admin/dashboard";
-    }
-
-    if (profile.account_type === "agent") {
-      return "/agent/dashboard";
-    }
-
-    if (profile.account_type === "owner") {
-      return "/owner/dashboard";
-    }
-
-    return "/profile";
-  };
-
-  const getDashboardLabel = () => {
-    if (!profile) return "Dashboard";
-    if (profile.role === "admin") return "Admin Dashboard";
-    if (profile.account_type === "user") return "Profile";
-    return "Dashboard";
-  };
+  
 
   const initials =
     profile?.full_name
@@ -131,8 +107,8 @@ export default function ProfileDropdown() {
               {({ active }) => (
                 <button
                   onClick={() => {
-                    console.log("Redirecting To:", getDashboardRoute());
-                    router.push(getDashboardRoute());
+                    console.log("Redirecting To:", getDashboardRoute(profile));
+                    router.push(getDashboardRoute(profile));
                   }}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     active ? "bg-slate-50 text-slate-900" : "text-slate-600"
@@ -145,7 +121,7 @@ export default function ProfileDropdown() {
                         : "text-slate-400 group-hover:text-slate-600"
                     }`}
                   />
-                  <span className="truncate">{getDashboardLabel()}</span>
+                  <span className="truncate">{getDashboardLabel(profile)}</span>
                 </button>
               )}
             </Menu.Item>
@@ -154,7 +130,7 @@ export default function ProfileDropdown() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => router.push(getDashboardRoute())}
+                  onClick={() => router.push(getDashboardRoute(profile))}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     active ? "bg-slate-50 text-slate-900" : "text-slate-600"
                   }`}
