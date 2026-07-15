@@ -43,7 +43,10 @@ export default function PropertyCard({ property }: { property: PropertyCardType 
     .join(", ");
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) shadow-[0_8px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:border-[#316BF3]/20 hover:shadow-[0_20px_45px_rgba(15,23,42,0.10)]">
+    <Link
+      href={`/properties/${property.slug}`}
+      className="group flex flex-col overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) shadow-[0_8px_20px_rgba(15,23,42,0.06)] transition-all duration-300 hover:border-[#316BF3]/20 hover:shadow-[0_20px_45px_rgba(15,23,42,0.10)]"
+    >
       {/* Image */}
       <div className="relative h-52 w-full overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -116,14 +119,11 @@ export default function PropertyCard({ property }: { property: PropertyCardType 
             </span>
           </div>
 
-          <Link
-            href={`/properties/${property.slug}`}
-            className="rounded-full bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#1D4ED8]"
-          >
+          <span className="rounded-full bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-300 group-hover:bg-[#1D4ED8]">
             View
-          </Link>
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
