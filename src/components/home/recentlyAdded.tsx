@@ -2,75 +2,44 @@
 "use client";
 
 import { motion } from "motion/react";
-import { 
-  MapPin, 
-  Heart, 
-  Clock, 
-  Star, 
-  BedDouble, 
-  Bath, 
-  Maximize, 
+import Link from "next/link";
+import {
+  MapPin,
+  Heart,
+  Clock,
+  Star,
+  BedDouble,
+  Bath,
+  Maximize,
   Phone,
   ChevronRight,
   SearchX
 } from "lucide-react";
 import { useState } from "react";
+import { PropertyCard } from "@/types/property-card";
+import { formatPriceRange, titleCase } from "@/lib/format";
 
-const PROPERTIES = [
-  {
-    name: "Modern Family Villa",
-    location: "Koramangala, Bangalore",
-    price: "₹1.85 Cr",
-    image: "/assets/images/Trust-image1.jpg", 
-    isFeatured: true,
-    beds: 4,
-    baths: 3,
-    sqft: "2,450",
-    category: "Villas"
-  },
-  {
-    name: "Premium Apartment",
-    location: "Andheri West, Mumbai",
-    price: "₹95 Lac",
-    image: "/assets/images/Trust-image2.jpg",
-    isFeatured: false,
-    beds: 2,
-    baths: 2,
-    sqft: "1,100",
-    category: "Apartments"
-  },
-  {
-    name: "Luxury Penthouse",
-    location: "Connaught Place, Delhi",
-    price: "₹4.5 Cr",
-    image: "/assets/images/Trust-image3.jpg",
-    isFeatured: true,
-    beds: 4,
-    baths: 4,
-    sqft: "3,800",
-    category: "Apartments"
-  },
-  {
-    name: "Cozy Studio Apartment",
-    location: "Indiranagar, Bangalore",
-    price: "₹45 Lac",
-    image: "/assets/images/Trust-image4.jpg",
-    isFeatured: false,
-    beds: 1,
-    baths: 1,
-    sqft: "550",
-    category: "Apartments"
-  },
-];
+const FALLBACK_IMAGE = "/assets/images/Trust-image1.jpg";
 
 const TABS = ["All", "Apartments", "Villas", "Plots", "Penthouse", "Studio", "Commercial", "Farmland"];
 
-export default function RecentlyAddedProperties() {
+/** True when a property's type matches the selected tab (case/plural-insensitive). */
+function matchesTab(propertyType: string, tab: string): boolean {
+  if (tab === "All") return true;
+  const root = tab.toLowerCase().replace(/s$/, "");
+  return propertyType.toLowerCase().includes(root);
+}
+
+export default function RecentlyAddedProperties({
+  properties = [],
+}: {
+  properties?: PropertyCard[];
+}) {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("All");
 
-  const filteredProperties = PROPERTIES.filter(
-    (prop) => activeTab === "All" || prop.category === activeTab
+  const filteredProperties = properties.filter((prop) =>
+    matchesTab(prop.propertyType, activeTab)
   );
 
   return (
@@ -161,9 +130,14 @@ export default function RecentlyAddedProperties() {
           {filteredProperties.length > 0 ? (
             /* Property Cards Grid */
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {filteredProperties.map((item, i) => (
+              {filteredProperties.map((item, i) => {
+                const location = [item.locality, item.city].filter(Boolean).join(", ");
+                const price = formatPriceRange(item.minPrice, item.maxPrice);
+                const image = item.primaryImage ?? FALLBACK_IMAGE;
+                const sqft = item.minArea ? item.minArea.toLocaleString("en-IN") : null;
+                return (
                 <motion.div
-                  key={item.name}
+                  key={item.id}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -187,8 +161,8 @@ export default function RecentlyAddedProperties() {
                   {/* Image Container */}
                   <div className="relative h-48 overflow-hidden bg-(--surface-container-high)">
                     <motion.img
-                      src={item.image}
-                      alt={item.name}
+                      src={image}
+                      alt={item.title}
                       whileHover={{ scale: 1.05 }}
                       transition={{
                         duration: 0.5,
@@ -210,9 +184,9 @@ export default function RecentlyAddedProperties() {
                       whileTap={{ scale: 0.9 }}
                       onClick={() =>
                         setWishlist((prev) =>
-                          prev.includes(item.name)
-                            ? prev.filter((x) => x !== item.name)
-                            : [...prev, item.name],
+                          prev.includes(item.slug)
+                            ? prev.filter((x) => x !== item.slug)
+                            : [...prev, item.slug],
                         )
                       }
                       className="
@@ -237,7 +211,7 @@ export default function RecentlyAddedProperties() {
                       <Heart
                         size={16}
                         className={`transition-all duration-300 ${
-                          wishlist.includes(item.name)
+                          wishlist.includes(item.slug)
                             ? "fill-(--error) text-(--error)"
                             : "text-(--outline)"
                         }`}
@@ -248,44 +222,47 @@ export default function RecentlyAddedProperties() {
                     <div className="absolute bottom-3 left-3 flex items-center gap-3 rounded-md bg-(--inverse-surface)/70 px-2.5 py-1.5 text-label-sm text-(--inverse-on-surface) backdrop-blur-sm">
                       <div className="flex items-center gap-1">
                         <BedDouble size={14} />
-                        <span>{item.beds}</span>
+                        <span>{item.bedrooms ?? "—"}</span>
                       </div>
                       <div className="h-3 w-px bg-(--inverse-on-surface)/30" />
                       <div className="flex items-center gap-1">
                         <Bath size={14} />
-                        <span>{item.baths}</span>
+                        <span>{item.bathrooms ?? "—"}</span>
                       </div>
                       <div className="h-3 w-px bg-(--inverse-on-surface)/30" />
                       <div className="flex items-center gap-1">
                         <Maximize size={12} />
-                        <span>{item.sqft} sqft</span>
+                        <span>{sqft ? `${sqft} sqft` : "—"}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Content Container */}
                   <div className="p-5">
-                    <h3 className="text-body-lg font-bold text-foreground">
-                      {item.name}
-                    </h3>
+                    <Link href={`/properties/${item.slug}`}>
+                      <h3 className="text-body-lg font-bold text-foreground">
+                        {item.title}
+                      </h3>
+                    </Link>
 
                     <p className="mt-1.5 flex items-center gap-1.5 text-label-md text-muted">
                       <MapPin size={14} className="shrink-0" />
-                      {item.location}
+                      {location || titleCase(item.propertyType)}
                     </p>
 
                     <div className="mt-4 flex items-center justify-between border-t border-(--border) pt-4">
                       <p className="text-headline-md text-primary">
-                        {item.price}
+                        {price}
                       </p>
-                      
+
                       <button className="flex h-9 w-9 items-center justify-center rounded-md bg-(--secondary-fixed) text-(--on-secondary-fixed-variant) transition-colors hover:bg-(--secondary-fixed-dim)">
                         <Phone size={16} />
                       </button>
                     </div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             /* Empty State */

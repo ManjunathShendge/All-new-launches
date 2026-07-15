@@ -76,7 +76,7 @@ export async function middleware(request: NextRequest) {
   // -----------------------------
   if (
     pathname.startsWith("/profile") &&
-    profile.account_type !== "user"
+    (profile.account_type === "agent" || profile.account_type === "owner")
   ) {
     return NextResponse.redirect(new URL("/", request.url));
   }

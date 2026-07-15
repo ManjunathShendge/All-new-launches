@@ -25,10 +25,10 @@ const footerSections = [
   {
     title: "Properties",
     links: [
-      { label: "Buy", href: "/buy" },
-      { label: "Rent", href: "/rent" },
-      { label: "Lease", href: "/lease" },
-      { label: "PG/Co-living", href: "/pg-coliving" },
+      { label: "All Properties", href: "/properties" },
+      { label: "Buy", href: "/properties?transactionType=sell" },
+      { label: "Rent", href: "/properties?transactionType=rent" },
+      { label: "New Projects", href: "/properties?propertyCategory=new_project" },
     ],
   },
   {

@@ -45,7 +45,12 @@ export class AuthValidator {
       };
     }
 
-    
+    if (!data.accountType) {
+      return {
+        valid: false,
+        message: "Please select an account type.",
+      };
+    }
 
     if (!data.phone.trim()) {
       return {

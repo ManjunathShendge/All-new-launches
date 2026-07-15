@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/client";
 
 import { LoginData, SignupData, AuthResponse } from "@/types/auth.types";
 
+const getBaseUrl = () =>
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (typeof window !== "undefined" ? window.location.origin : "");
+
 export class AuthService {
   /**
    * Login
@@ -64,21 +68,27 @@ export class AuthService {
   /**
    * Signup
    */
-  
+
+  /**
+   * Signup
+   */
   static async signup(data: SignupData): Promise<AuthResponse> {
     const supabase = createClient();
 
-    // Check if email already exists
-    const { data: existingUser, error: existingUserError } = await supabase
+    // Normalize email
+    const email = data.email.trim().toLowerCase();
+
+    // STEP 1 - Check if email already exists
+    const { data: existingUser, error: checkError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", data.email.toLowerCase().trim())
+      .eq("email", email)
       .maybeSingle();
 
-    if (existingUserError) {
+    if (checkError) {
       return {
         success: false,
-        error: existingUserError.message,
+        error: "Unable to validate email. Please try again.",
       };
     }
 
@@ -89,12 +99,12 @@ export class AuthService {
       };
     }
 
-    // Create Supabase Auth user
+    // STEP 2 - Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
+      email,
       password: data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: `${getBaseUrl()}/auth`,
         data: {
           full_name: data.fullName,
           phone: data.phone,
@@ -114,23 +124,6 @@ export class AuthService {
       return {
         success: false,
         error: "Unable to create account.",
-      };
-    }
-
-    // Save profile
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: authData.user.id,
-      full_name: data.fullName,
-      email: data.email.toLowerCase().trim(),
-      phone: data.phone,
-      account_type: data.accountType,
-      role: "user",
-    });
-
-    if (profileError) {
-      return {
-        success: false,
-        error: profileError.message,
       };
     }
 
@@ -177,7 +170,7 @@ export class AuthService {
     const supabase = createClient();
 
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getBaseUrl()}/reset-password`,
     });
   }
 
@@ -191,7 +184,7 @@ export class AuthService {
       type: "signup",
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: `${getBaseUrl()}/auth`,
       },
     });
   }
