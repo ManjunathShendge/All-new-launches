@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -56,8 +57,8 @@ export default function GentleCollaborationCTA() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <a
-            href="#contact"
+          <Link
+            href="/properties"
             className="group inline-flex items-center gap-3 bg-[#131b2e] hover:bg-[#316bf3] text-white font-['Inter'] font-semibold text-lg px-10 py-5 rounded-full transition-all duration-500 shadow-xl shadow-[#131b2e]/10 hover:shadow-[#316bf3]/20"
           >
             <span>Explore Properties</span>
@@ -69,7 +70,7 @@ export default function GentleCollaborationCTA() {
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:translate-x-1 transition-all duration-300">
               <ArrowRight className="w-4 h-4 text-white group-hover:text-[#131b2e] transition-colors duration-300" />
             </div>
-          </a>
+          </Link>
         </motion.div>
 
         {/* Small "Low-Pressure" Note */}

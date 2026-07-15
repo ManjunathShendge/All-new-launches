@@ -1,6 +1,7 @@
 
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import Lenis from "lenis";
 import { ZoomParallax } from '@/components/ui/zoom-parallax';
@@ -26,9 +27,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$12,500,000</h3>
                     <p className="text-sm opacity-90 mb-4">Downtown Commercial Metroplex</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -39,9 +40,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$4,250,000</h3>
                     <p className="text-sm opacity-90 mb-4">Skyline Penthouse Suite</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -52,9 +53,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$8,900,000</h3>
                     <p className="text-sm opacity-90 mb-4">Modern Art Deco Villa</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -65,9 +66,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$1,850,000</h3>
                     <p className="text-sm opacity-90 mb-4">Secluded Mountain Retreat</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -78,9 +79,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$3,100,000</h3>
                     <p className="text-sm opacity-90 mb-4">Minimalist Smart Home</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -91,9 +92,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$14,000,000</h3>
                     <p className="text-sm opacity-90 mb-4">Private Beachfront Estate</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },
@@ -104,9 +105,9 @@ export default function DefaultDemo() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-linear-to-t from-black/80 via-black/20 to-transparent text-white">
                     <h3 className="text-2xl font-bold tracking-tight">$2,250,000</h3>
                     <p className="text-sm opacity-90 mb-4">Woodland Modern Cabin</p>
-                    <button className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                    <Link href="/properties" className="w-fit px-6 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition-colors">
                         View Property
-                    </button>
+                    </Link>
                 </div>
             )
         },

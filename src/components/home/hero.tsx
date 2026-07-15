@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, PlayCircle, X } from "lucide-react";
 
@@ -186,13 +187,16 @@ export default function HeroSection() {
             transition={{ delay: 0.8 }}
             className="flex flex-wrap gap-5"
           >
-            <button className="group flex items-center gap-3 rounded-full bg-[#0051D5] px-7 py-4 font-medium transition-all duration-300 hover:scale-105 hover:bg-blue-700">
+            <Link
+              href="/properties"
+              className="group flex items-center gap-3 rounded-full bg-[#0051D5] px-7 py-4 font-medium transition-all duration-300 hover:scale-105 hover:bg-blue-700"
+            >
               Explore Properties
               <ArrowRight
                 size={18}
                 className="transition group-hover:translate-x-1"
               />
-            </button>
+            </Link>
 
             <button
               onClick={() => setIsVideoModalOpen(true)}

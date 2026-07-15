@@ -5,10 +5,10 @@ import { Home, Building2, Landmark, Warehouse, ArrowUpRight } from "lucide-react
 import { useSectionScroll } from "@/components/ui/useSectionScroll";
 
 const CATEGORIES = [
-  { icon: Home, label: "Residential", count: "25,000+", tag: "Properties" },
-  { icon: Building2, label: "Commercial", count: "8,500+", tag: "Properties" },
-  { icon: Landmark, label: "Plots/Land", count: "12,000+", tag: "Properties" },
-  { icon: Warehouse, label: "Industrial", count: "3,200+", tag: "Properties" },
+  { icon: Home, label: "Residential", count: "25,000+", tag: "Properties", href: "/properties" },
+  { icon: Building2, label: "Commercial", count: "8,500+", tag: "Properties", href: "/properties?propertyType=commercial" },
+  { icon: Landmark, label: "Plots/Land", count: "12,000+", tag: "Properties", href: "/properties?propertyType=plot" },
+  { icon: Warehouse, label: "Industrial", count: "3,200+", tag: "Properties", href: "/properties" },
 ];
 
 export default function PropertyCategories() {
@@ -50,14 +50,15 @@ export default function PropertyCategories() {
           {CATEGORIES.map((item, i) => {
             const Icon = item.icon;
             return (
-              <motion.div
+              <motion.a
                 key={item.label}
+                href={item.href}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
                 whileHover={{ y: -6 }}
-                className="group relative cursor-pointer overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) p-8 transition-shadow duration-300 hover:shadow-elevated"
+                className="group relative block cursor-pointer overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) p-8 transition-shadow duration-300 hover:shadow-elevated"
               >
                 <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-(--secondary)/0 blur-2xl transition-all duration-500 group-hover:bg-(--secondary)/10" />
 
@@ -75,7 +76,7 @@ export default function PropertyCategories() {
                   <span className="text-lg font-bold text-primary">{item.count}</span>{" "}
                   {item.tag}
                 </p>
-              </motion.div>
+              </motion.a>
             );
           })}
         </div>

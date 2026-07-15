@@ -304,14 +304,15 @@ export default function RecentlyAddedProperties({
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="group flex w-full items-center justify-center gap-2 rounded-pill border-2 border-primary bg-transparent px-6 py-2.5 text-center text-label-md text-primary transition-all hover:bg-primary hover:text-primary-foreground lg:w-fit"
-          >
-            View All Properties
-            <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </motion.button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Link
+              href="/properties"
+              className="group flex w-full items-center justify-center gap-2 rounded-pill border-2 border-primary bg-transparent px-6 py-2.5 text-center text-label-md text-primary transition-all hover:bg-primary hover:text-primary-foreground lg:w-fit"
+            >
+              View All Properties
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
         </motion.div>
 
       </div>
