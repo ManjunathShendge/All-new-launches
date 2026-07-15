@@ -145,9 +145,10 @@ export default function RecentlyAddedProperties({
                     delay: i * 0.1,
                   }}
                   className="
-                    group 
-                    overflow-hidden 
-                    rounded-card 
+                    group
+                    relative
+                    overflow-hidden
+                    rounded-card
                     border 
                     border-(--border) 
                     bg-(--surface-container-lowest) 
@@ -158,17 +159,19 @@ export default function RecentlyAddedProperties({
                     hover:shadow-[0_20px_45px_rgba(15,23,42,0.10),0_35px_80px_rgba(15,23,42,0.08)]
                   "
                 >
+                  {/* Whole-card link overlay */}
+                  <Link
+                    href={`/properties/${item.slug}`}
+                    aria-label={item.title}
+                    className="absolute inset-0 z-10"
+                  />
+
                   {/* Image Container */}
                   <div className="relative h-48 overflow-hidden bg-(--surface-container-high)">
                     <motion.img
                       src={image}
                       alt={item.title}
-                      whileHover={{ scale: 1.05 }}
-                      transition={{
-                        duration: 0.5,
-                        ease: "easeOut",
-                      }}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
                     {/* Featured Badge */}
@@ -190,9 +193,10 @@ export default function RecentlyAddedProperties({
                         )
                       }
                       className="
-                        absolute 
-                        right-3 
-                        top-3 
+                        absolute
+                        z-20
+                        right-3
+                        top-3
                         flex 
                         h-10 
                         w-10 
@@ -239,11 +243,9 @@ export default function RecentlyAddedProperties({
 
                   {/* Content Container */}
                   <div className="p-5">
-                    <Link href={`/properties/${item.slug}`}>
-                      <h3 className="text-body-lg font-bold text-foreground">
-                        {item.title}
-                      </h3>
-                    </Link>
+                    <h3 className="text-body-lg font-bold text-foreground transition-colors group-hover:text-primary">
+                      {item.title}
+                    </h3>
 
                     <p className="mt-1.5 flex items-center gap-1.5 text-label-md text-muted">
                       <MapPin size={14} className="shrink-0" />
@@ -255,7 +257,7 @@ export default function RecentlyAddedProperties({
                         {price}
                       </p>
 
-                      <button className="flex h-9 w-9 items-center justify-center rounded-md bg-(--secondary-fixed) text-(--on-secondary-fixed-variant) transition-colors hover:bg-(--secondary-fixed-dim)">
+                      <button className="relative z-20 flex h-9 w-9 items-center justify-center rounded-md bg-(--secondary-fixed) text-(--on-secondary-fixed-variant) transition-colors hover:bg-(--secondary-fixed-dim)">
                         <Phone size={16} />
                       </button>
                     </div>
