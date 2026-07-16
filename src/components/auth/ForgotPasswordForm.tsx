@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AuthController } from "@/lib/controllers/auth.controller";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isAdmin = searchParams.get("from") === "admin";
+  const loginPath = isAdmin ? "/admin" : "/auth";
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +24,10 @@ export default function ForgotPasswordPage() {
     setSuccess("");
     setLoading(true);
 
-    const response = await AuthController.forgotPassword(email);
+    const response = await AuthController.forgotPassword(
+      email,
+      isAdmin ? "admin" : undefined
+    );
 
     setLoading(false);
 
@@ -79,7 +86,7 @@ export default function ForgotPasswordPage() {
         </form>
 
         <button
-          onClick={() => router.push("/auth")}
+          onClick={() => router.push(loginPath)}
           className="mt-6 w-full text-sm font-medium text-slate-500 hover:text-slate-700"
         >
           Back to Login

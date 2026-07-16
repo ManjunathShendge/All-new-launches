@@ -21,6 +21,22 @@ export class AuthController {
   }
 
   /**
+   * Admin Login
+   */
+  static async adminLogin(data: LoginData): Promise<AuthResponse> {
+    const validation = AuthValidator.validateLogin(data);
+
+    if (!validation.valid) {
+      return {
+        success: false as const,
+        error: validation.message,
+      };
+    }
+
+    return await AuthService.adminLogin(data);
+  }
+
+  /**
    * Signup
    */
   static async signup(data: SignupData): Promise<AuthResponse> {
@@ -46,8 +62,8 @@ export class AuthController {
   /**
    * Forgot Password
    */
-  static async forgotPassword(email: string) {
-    return await AuthService.forgotPassword(email);
+  static async forgotPassword(email: string, from?: string) {
+    return await AuthService.forgotPassword(email, from);
   }
 
   /**

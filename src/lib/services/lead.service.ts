@@ -1,4 +1,7 @@
-import { leadRepository } from "@/lib/supabase/lead.repository";
+import {
+  leadRepository,
+  AssignableAgent,
+} from "@/lib/supabase/lead.repository";
 import { mapLead } from "@/lib/mappers/lead.mapper";
 import { CreateLeadInput, Lead, LeadRow } from "@/types/lead";
 
@@ -19,6 +22,8 @@ export class LeadService {
       phone: input.phone.trim(),
       message: input.message.trim(),
       status: "new",
+      // New leads await admin moderation before they reach any agent.
+      approval_status: "pending",
       lead_source: "website",
       created_at: new Date().toISOString(),
     });
@@ -34,6 +39,26 @@ export class LeadService {
   async getAllLeads(): Promise<Lead[]> {
     const rows = await leadRepository.getAll();
     return this.enrich(rows, true);
+  }
+
+  /** Agents/owners a lead can be assigned to (admin reassignment). */
+  async getAssignableAgents(): Promise<AssignableAgent[]> {
+    return leadRepository.getAssignableAgents();
+  }
+
+  /** Admin: approve a lead so it appears on the assigned agent's dashboard. */
+  async approveLead(id: number): Promise<void> {
+    await leadRepository.updateApproval(id, "approved");
+  }
+
+  /** Admin: reject a lead so it never reaches an agent. */
+  async disapproveLead(id: number): Promise<void> {
+    await leadRepository.updateApproval(id, "disapproved");
+  }
+
+  /** Admin: reassign a lead to a different agent and approve it in one step. */
+  async reassignLead(id: number, wpUserId: number): Promise<void> {
+    await leadRepository.updateApproval(id, "approved", wpUserId);
   }
 
   private async enrich(rows: LeadRow[], withAgent: boolean): Promise<Lead[]> {

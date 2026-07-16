@@ -45,7 +45,7 @@ export default function LeadsTable({
 
   return (
     <div className="overflow-x-auto rounded-card border border-(--border) bg-(--surface-container-lowest)">
-      <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+      <table className="w-full min-w-180 border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-(--border) text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-medium">Date</th>

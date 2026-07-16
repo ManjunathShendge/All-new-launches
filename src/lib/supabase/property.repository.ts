@@ -127,6 +127,11 @@ export class PropertyRepository {
     if (filter?.listingEntity)
       query = query.eq("listing_entity", filter.listingEntity);
 
+    // Scope pages (NRI / Upcoming) are driven by the `possession_status` value.
+    // Matched case-insensitively so "NRI"/"nri" and "Upcoming"/"upcoming" work.
+    if (filter?.possessionStatus)
+      query = query.ilike("possession_status", `%${filter.possessionStatus}%`);
+
     // `property_type` / `configuration` are blank for new projects — the real
     // values live in the `available_*` columns, so match against those.
     if (filter?.propertyType)

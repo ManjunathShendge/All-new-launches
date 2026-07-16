@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function pageWindow(current: number, total: number): (number | "…")[] {
@@ -26,13 +26,14 @@ export default function Pagination({
   totalPages: number;
 }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   if (totalPages <= 1) return null;
 
   const hrefFor = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(p));
-    return `/properties?${params.toString()}`;
+    return `${pathname}?${params.toString()}`;
   };
 
   const baseBtn =

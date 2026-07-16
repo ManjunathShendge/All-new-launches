@@ -1,0 +1,10 @@
+ADVANCED — Events (deferred)
+
+Feature                     | Where it lives (page / feature)
+----------------------------|----------------------------------------
+Add-to-Calendar             | Event Detail page (Google / Outlook / .ics)
+Confirmation email          | RSVP flow (after registerForEvent)
+WhatsApp notify             | RSVP flow (after registerForEvent)
+Waitlist notify             | Registrations / capacity (spot-opened)
+Similar events              | Event Detail page (by category / locality)
+Social share                | Event Card + Event Detail page (WhatsApp, copy link)

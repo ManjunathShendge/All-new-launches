@@ -13,6 +13,9 @@ export interface PropertyFilter {
 
   configuration?: string;
 
+  /** Filters on `possession_status` (e.g. "nri", "upcoming" scope pages). */
+  possessionStatus?: string;
+
   minPrice?: number;
 
   maxPrice?: number;

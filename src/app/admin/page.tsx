@@ -1,7 +1,5 @@
+import AdminAuthPage from "@/components/auth/AdminAuthPage";
+
 export default function AdminLoginPage() {
-  return (
-    <div>
-      Admin Login
-    </div>
-  );
+  return <AdminAuthPage />;
 }

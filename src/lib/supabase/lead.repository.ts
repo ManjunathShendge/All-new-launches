@@ -1,8 +1,8 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { LeadRow } from "@/types/lead";
+import { LeadApprovalStatus, LeadRow } from "@/types/lead";
 
 const LEAD_FIELDS =
-  "id, property_id, property_url, user_id, name, email, phone, message, status, lead_source, created_at";
+  "id, property_id, property_url, user_id, name, email, phone, message, status, approval_status, lead_source, created_at";
 
 /** Values written when a new lead is captured. */
 export interface NewLead {
@@ -14,8 +14,16 @@ export interface NewLead {
   phone: string;
   message: string;
   status: string;
+  approval_status: string;
   lead_source: string;
   created_at: string;
+}
+
+/** An agent/owner a lead can be assigned to (admin reassignment). */
+export interface AssignableAgent {
+  wpUserId: number;
+  name: string;
+  accountType: string;
 }
 
 /**
@@ -31,17 +39,63 @@ export class LeadRepository {
     if (error) throw new Error(error.message);
   }
 
-  /** Leads belonging to a single agent (by their WordPress user id). */
+  /**
+   * Leads belonging to a single agent (by their WordPress user id). Only
+   * admin-approved leads are returned — pending/disapproved leads never reach
+   * an agent's dashboard.
+   */
   async getByAgentWpId(wpUserId: number): Promise<LeadRow[]> {
     const supabase = createServiceRoleClient();
     const { data, error } = await supabase
       .from("leads")
       .select(LEAD_FIELDS)
       .eq("user_id", wpUserId)
+      .eq("approval_status", "approved")
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
     return (data ?? []) as LeadRow[];
+  }
+
+  /**
+   * Update a lead's moderation state (and optionally reassign it to a different
+   * agent by their WordPress user id). Used by the admin dashboard only.
+   */
+  async updateApproval(
+    id: number,
+    approvalStatus: LeadApprovalStatus,
+    assignedWpUserId?: number
+  ): Promise<void> {
+    const supabase = createServiceRoleClient();
+
+    const patch: { approval_status: string; user_id?: number } = {
+      approval_status: approvalStatus,
+    };
+    if (assignedWpUserId != null) patch.user_id = assignedWpUserId;
+
+    const { error } = await supabase.from("leads").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  /** Agents/owners a lead can be assigned to (admin reassignment dropdown). */
+  async getAssignableAgents(): Promise<AssignableAgent[]> {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("old_wp_user_id, full_name, account_type")
+      .in("account_type", ["agent", "owner"])
+      .not("old_wp_user_id", "is", null)
+      .order("full_name", { ascending: true });
+
+    if (error) throw new Error(error.message);
+
+    return (data ?? [])
+      .filter((r) => r.old_wp_user_id != null)
+      .map((r) => ({
+        wpUserId: r.old_wp_user_id as number,
+        name: (r.full_name as string | null)?.trim() || "Unnamed agent",
+        accountType: (r.account_type as string | null) ?? "agent",
+      }));
   }
 
   /** Every lead (admin view). */

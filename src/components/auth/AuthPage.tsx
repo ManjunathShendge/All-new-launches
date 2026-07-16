@@ -79,7 +79,9 @@ export default function AuthPage() {
           return;
         }
 
-        router.replace("/");
+        // Send the user to their role-based destination (admin/agent/owner/
+        // profile) that AuthService.login resolved, not a hardcoded home page.
+        router.replace(response.redirectTo ?? "/");
         router.refresh();
       } else {
         // SIGNUP

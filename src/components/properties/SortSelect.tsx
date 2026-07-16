@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 const OPTIONS = [
   { value: "featured", label: "Featured" },
@@ -12,13 +12,14 @@ const OPTIONS = [
 export default function SortSelect() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const current = searchParams.get("sort") ?? "featured";
 
   const onChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", value);
     params.delete("page"); // back to first page on re-sort
-    router.push(`/properties?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (

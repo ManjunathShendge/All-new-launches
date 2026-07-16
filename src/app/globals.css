@@ -82,6 +82,12 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* Always reserve the scrollbar gutter so centered containers never shift
+     sideways when content height changes (e.g. loading -> loaded). */
+  scrollbar-gutter: stable;
+  /* Force the vertical scrollbar to always be present so the viewport width is
+     constant whether a page is short or tall (bulletproof no-shift). */
+  overflow-y: scroll;
 }
 
 * {

@@ -13,6 +13,10 @@ export class LeadController {
   async getAllLeads() {
     return leadService.getAllLeads();
   }
+
+  async getAssignableAgents() {
+    return leadService.getAssignableAgents();
+  }
 }
 
 export const leadController = new LeadController();

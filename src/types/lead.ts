@@ -8,6 +8,9 @@ export interface CreateLeadInput {
   propertyUrl?: string;
 }
 
+/** Admin moderation state for a captured lead. */
+export type LeadApprovalStatus = "pending" | "approved" | "disapproved";
+
 /** Raw `leads` row (the subset of columns this app reads/writes). */
 export interface LeadRow {
   id: number;
@@ -19,6 +22,7 @@ export interface LeadRow {
   phone: string | null;
   message: string | null;
   status: string | null;
+  approval_status: string | null;
   lead_source: string | null;
   created_at: string | null;
 }
@@ -37,6 +41,7 @@ export interface Lead {
   phone: string;
   message: string;
   status: string;
+  approvalStatus: LeadApprovalStatus;
   source: string | null;
   createdAt: string | null;
 }

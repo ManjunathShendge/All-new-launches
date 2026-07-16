@@ -1,4 +1,16 @@
-import { Lead, LeadRow } from "@/types/lead";
+import { Lead, LeadApprovalStatus, LeadRow } from "@/types/lead";
+
+const APPROVAL_VALUES: LeadApprovalStatus[] = [
+  "pending",
+  "approved",
+  "disapproved",
+];
+
+function toApprovalStatus(value: string | null): LeadApprovalStatus {
+  return APPROVAL_VALUES.includes(value as LeadApprovalStatus)
+    ? (value as LeadApprovalStatus)
+    : "pending";
+}
 
 export function mapLead(
   row: LeadRow,
@@ -21,6 +33,7 @@ export function mapLead(
     phone: row.phone ?? "",
     message: row.message ?? "",
     status: row.status ?? "new",
+    approvalStatus: toApprovalStatus(row.approval_status),
     source: row.lead_source,
     createdAt: row.created_at,
   };

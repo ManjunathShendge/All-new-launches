@@ -12,44 +12,26 @@ import { useRouter } from "next/navigation";
 import {
   getDashboardRoute,
   getDashboardLabel,
+  type Profile as DashboardProfile,
 } from "@/lib/utils/dashboard";
-
-type Profile = {
-  full_name: string;
-  account_type: "agent" | "owner" | "user";
-  role: "admin" | "user";
-};
+import {
+  getCurrentUserProfile,
+  type CurrentUserProfile,
+} from "@/lib/actions/profile.action";
 
 export default function ProfileDropdown() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
 
   useEffect(() => {
-    loadProfile();
+    // Resolved server-side via the service-role client (bypasses profiles RLS).
+    // Ignore transient fetch failures so they don't bubble as unhandled rejections.
+    getCurrentUserProfile()
+      .then(setProfile)
+      .catch(() => {});
   }, []);
-
-  const loadProfile = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("full_name, account_type, role")
-      .eq("id", user.id)
-      .single();
-
-    console.log("Profile Data:", data);
-    console.log("Profile Error:", error);
-
-    if (data) {
-      setProfile(data);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -57,10 +39,13 @@ export default function ProfileDropdown() {
     router.refresh();
   };
 
-  
+  // Shape the profile for the dashboard route/label helpers.
+  const dashboardProfile: DashboardProfile | null = profile
+    ? { account_type: profile.accountType, role: profile.role }
+    : null;
 
   const initials =
-    profile?.full_name
+    profile?.fullName
       ?.split(" ")
       .map((n) => n[0])
       .join("")
@@ -84,18 +69,23 @@ export default function ProfileDropdown() {
       >
         <Menu.Items className="absolute left-1/2 top-full z-50 mt-3 max-h-[75vh] w-48 -translate-x-1/2 origin-top overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl focus:outline-none">
           {/* Header */}
-          <div className="px-3 py-4 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-lg font-bold text-white">
+          <div className="flex items-center gap-3 px-3 py-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-base font-bold text-white">
               {initials}
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 truncate">
-              {profile?.full_name ?? "Loading..."}
-            </h3>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-500">
-              {profile?.role === "admin"
-                ? "Administrator"
-                : profile?.account_type}
-            </p>
+            <div className="min-w-0">
+              {/* Only regular users see their name here */}
+              {profile?.accountType === "user" && profile?.fullName && (
+                <h3 className="truncate text-sm font-semibold text-slate-900">
+                  {profile.fullName}
+                </h3>
+              )}
+              <p className="truncate text-xs font-medium uppercase tracking-wider text-slate-500">
+                {profile?.role === "admin"
+                  ? "Administrator"
+                  : profile?.accountType}
+              </p>
+            </div>
           </div>
 
           <div className="h-px bg-slate-100 mb-2 mx-2" />
@@ -106,10 +96,7 @@ export default function ProfileDropdown() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => {
-                    console.log("Redirecting To:", getDashboardRoute(profile));
-                    router.push(getDashboardRoute(profile));
-                  }}
+                  onClick={() => router.push(getDashboardRoute(dashboardProfile))}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     active ? "bg-slate-50 text-slate-900" : "text-slate-600"
                   }`}
@@ -121,7 +108,7 @@ export default function ProfileDropdown() {
                         : "text-slate-400 group-hover:text-slate-600"
                     }`}
                   />
-                  <span className="truncate">{getDashboardLabel(profile)}</span>
+                  <span className="truncate">{getDashboardLabel(dashboardProfile)}</span>
                 </button>
               )}
             </Menu.Item>
@@ -130,7 +117,7 @@ export default function ProfileDropdown() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  onClick={() => router.push(getDashboardRoute(profile))}
+                  onClick={() => router.push(getDashboardRoute(dashboardProfile))}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     active ? "bg-slate-50 text-slate-900" : "text-slate-600"
                   }`}

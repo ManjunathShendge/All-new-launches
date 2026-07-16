@@ -13,4 +13,8 @@ export const leadApi = {
   getAllLeads() {
     return leadController.getAllLeads();
   },
+
+  getAssignableAgents() {
+    return leadController.getAssignableAgents();
+  },
 };

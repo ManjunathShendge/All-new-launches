@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 
@@ -71,6 +71,9 @@ const selectClass =
 export default function FilterSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Reuse the same sidebar across /properties, /nri and /upcoming-projects —
+  // filters apply to whatever listing route it's rendered on.
+  const pathname = usePathname();
 
   const readFromUrl = (): Fields => ({
     transactionType: searchParams.get("transactionType") ?? "",
@@ -104,13 +107,13 @@ export default function FilterSidebar() {
     // Reset to page 1, keep any active sort.
     const sort = searchParams.get("sort");
     if (sort) params.set("sort", sort);
-    router.push(`/properties?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
     setOpen(false);
   };
 
   const reset = () => {
     setFields(EMPTY);
-    router.push("/properties");
+    router.push(pathname);
     setOpen(false);
   };
 

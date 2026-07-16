@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AuthController } from "@/lib/controllers/auth.controller";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isAdmin = searchParams.get("from") === "admin";
+  const loginPath = isAdmin ? "/admin" : "/auth";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -54,7 +58,7 @@ export default function ResetPasswordForm() {
     setSuccess("Password updated successfully.");
 
     setTimeout(() => {
-      router.push("/auth");
+      router.push(loginPath);
     }, 2000);
   };
 
@@ -139,7 +143,7 @@ export default function ResetPasswordForm() {
           </button>
 
           <Link
-            href="/auth"
+            href={loginPath}
             className="block text-center text-sm font-medium text-slate-500 hover:text-slate-700"
           >
             Back to Login

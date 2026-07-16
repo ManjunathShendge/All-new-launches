@@ -41,6 +41,13 @@ const footerSections = [
     ],
   },
   {
+    title: "Discover",
+    links: [
+      { label: "Events", href: "/events" },
+      { label: "Leads Marketplace", href: "/leads-marketplace" },
+    ],
+  },
+  {
     title: "Support",
     links: [
       { label: "Privacy Policy", href: "/privacypolicy" },
@@ -95,7 +102,7 @@ export default function Footer() {
         </div>
 
         {/* Main Footer Links Grid */}
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-7">
           {/* Branding Column */}
           <div className="col-span-1 mb-6 lg:col-span-2">
             <Link href="/" className="mb-6 flex items-center">

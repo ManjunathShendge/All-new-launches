@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+import { ChevronDown } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import ProfileDropdown from "./ProfileDropdown";
 import {
   getDashboardRoute,
   getDashboardLabel,
+  type Profile,
 } from "@/lib/utils/dashboard";
+import { getCurrentUserProfile } from "@/lib/actions/profile.action";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -21,59 +24,126 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-type Profile = {
-  full_name: string;
-  account_type: "agent" | "owner" | "user";
-  role: "admin" | "user";
-};
+const projectLinks = [
+  {
+    label: "NRI",
+    href: "/nri",
+    description: "Listings for NRI buyers",
+  },
+  {
+    label: "Upcoming Projects",
+    href: "/upcoming-projects",
+    description: "New & under-construction projects",
+  },
+];
+
+const exploreLinks = [
+  {
+    label: "Events",
+    href: "/events",
+    description: "Site visits, launches & meetups",
+  },
+  {
+    label: "Leads Marketplace",
+    href: "/leads-marketplace",
+    description: "Buy verified buyer leads",
+  },
+];
+
+type DropdownLink = { label: string; href: string; description: string };
+
+function NavDropdown({
+  label,
+  links,
+}: {
+  label: string;
+  links: DropdownLink[];
+}) {
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        className="flex items-center gap-1 underline-offset-4 transition-all duration-200 hover:text-black"
+      >
+        {label}
+        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+      </button>
+      {/* pt bridges the hover gap to the menu */}
+      <div className="invisible absolute left-1/2 top-full z-50 w-64 -translate-x-1/2 pt-3 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+          {links.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
+            >
+              <span className="block font-semibold text-slate-900">
+                {item.label}
+              </span>
+              <span className="block text-xs text-slate-500">
+                {item.description}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<{
-    account_type: "user" | "agent" | "owner";
-    role: "admin" | "user";
-  } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const supabase = createClient();
 
-   
+  // Resolve the profile server-side (service-role, bypasses profiles RLS) so
+  // it always matches what the proxy and dropdown use.
+  const loadProfile = async () => {
+    // Swallow transient network failures (e.g. a token refresh firing this
+    // during a recompile / offline blip) so they don't become unhandled
+    // rejections and pop the dev error overlay.
+    try {
+      const current = await getCurrentUserProfile();
+      setProfile(
+        current
+          ? { account_type: current.accountType, role: current.role }
+          : null
+      );
+    } catch {
+      /* keep previous profile */
+    }
+  };
+
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const init = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      setUser(user);
+        setUser(user);
 
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("account_type, role")
-          .eq("id", user.id)
-          .single();
-
-        setProfile(data);
-      } else {
-        setProfile(null);
+        if (user) {
+          await loadProfile();
+        } else {
+          setProfile(null);
+        }
+      } catch {
+        /* ignore */
       }
     };
 
-    getUser();
+    init();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("account_type, role")
-          .eq("id", session.user.id)
-          .single();
-
-        setProfile(data);
+        void loadProfile();
       } else {
         setProfile(null);
       }
@@ -93,20 +163,6 @@ export default function Navbar() {
       document.body.style.overflow = "unset";
     };
   }, [isMobileMenuOpen]);
-
-  const dashboardRoute = () => {
-    if (!profile) return "/";
-    if (profile.role === "admin") {
-      return "/admin";
-    }
-    if (profile.account_type === "agent") {
-      return "/agent";
-    }
-    if (profile.account_type === "owner") {
-      return "/owner";
-    }
-    return "/profile";
-  };
 
   return (
     <>
@@ -131,7 +187,7 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-800 md:flex">
-            {navLinks.map((link) => (
+            {navLinks.slice(0, 2).map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -140,6 +196,22 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Projects dropdown (NRI, Upcoming Projects) */}
+            <NavDropdown label="Projects" links={projectLinks} />
+
+            {navLinks.slice(2).map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="underline-offset-4 transition-all duration-200 hover:text-black hover:underline"
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Explore dropdown (Events, Leads Marketplace) */}
+            <NavDropdown label="Explore" links={exploreLinks} />
           </nav>
 
           {/* Desktop CTA */}
@@ -202,7 +274,7 @@ export default function Navbar() {
         <div className="flex min-h-full flex-col px-8 pb-12 pt-32">
           {/* Navigation */}
           <nav className="flex w-full flex-col gap-6 text-3xl font-semibold">
-            {navLinks.map((link) => (
+            {[...navLinks, ...projectLinks, ...exploreLinks].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
