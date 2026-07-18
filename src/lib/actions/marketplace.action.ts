@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { profileRepository } from "@/lib/supabase/profile.repository";
 import { marketplaceRepository } from "@/lib/supabase/marketplace.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
 import { notifyUser, notifyAdmins } from "@/lib/notify";
@@ -25,43 +24,42 @@ export interface MutationResult {
   error?: string;
 }
 
-/** Returns the caller's profile id if they're an agent/owner, else null. */
-async function requireAgent(): Promise<string | null> {
+/**
+ * Returns the caller's profile id if signed in, else null.
+ * The marketplace is open to every signed-in user (not just agents/owners) —
+ * anyone can top up their wallet and buy leads.
+ */
+async function requireUser(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
-  const profile = await profileRepository.getSessionProfile(user.id);
-  if (profile?.accountType !== "agent" && profile?.accountType !== "owner") {
-    return null;
-  }
-  return user.id;
+  return user?.id ?? null;
 }
 
 export async function browseLeads(
   filter: MarketFilter = {}
 ): Promise<MarketLeadCard[]> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return [];
   return marketplaceRepository.browse(id, filter);
 }
 
 export async function getWalletBalance(): Promise<number> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return 0;
   return walletRepository.getBalance(id);
 }
 
 export async function getWalletTransactions(): Promise<WalletTx[]> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return [];
   return walletRepository.getTransactions(id);
 }
 
 export async function purchaseLead(listingId: number): Promise<PurchaseResult> {
-  const id = await requireAgent();
-  if (!id) return { ok: false, error: "Sign in as an agent to buy leads." };
+  const id = await requireUser();
+  if (!id) return { ok: false, error: "Sign in to buy leads." };
   const res = await marketplaceRepository.purchase(id, listingId);
   if (res.ok) revalidatePath("/leads-marketplace");
   return res;
@@ -71,8 +69,8 @@ export async function purchaseLead(listingId: number): Promise<PurchaseResult> {
 export async function buyLeads(
   listingIds: number[]
 ): Promise<BulkPurchaseResult> {
-  const id = await requireAgent();
-  if (!id) return { ok: false, error: "Sign in as an agent to buy leads." };
+  const id = await requireUser();
+  if (!id) return { ok: false, error: "Sign in to buy leads." };
 
   // Sanitize: unique positive integers, capped.
   const ids = [
@@ -96,8 +94,8 @@ export async function buyLeads(
 export async function buyAllAvailable(
   filter: MarketFilter = {}
 ): Promise<BulkPurchaseResult> {
-  const id = await requireAgent();
-  if (!id) return { ok: false, error: "Sign in as an agent to buy leads." };
+  const id = await requireUser();
+  if (!id) return { ok: false, error: "Sign in to buy leads." };
 
   const ids = await marketplaceRepository.availableListingIds(id, filter);
   if (ids.length === 0)
@@ -123,13 +121,13 @@ async function notifyPurchase(buyerId: string, bought: number, spent: number) {
   await notifyAdmins({
     type: "marketplace_purchase",
     title: "Marketplace sale",
-    body: `An agent purchased ${bought} lead${bought === 1 ? "" : "s"} for ${rupees}.`,
+    body: `A buyer purchased ${bought} lead${bought === 1 ? "" : "s"} for ${rupees}.`,
     link: "/admin/dashboard",
   });
 }
 
 export async function getMyPurchasedLeads(): Promise<PurchasedLead[]> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return [];
   return marketplaceRepository.getPurchasedLeads(id);
 }
@@ -141,7 +139,7 @@ export async function revealContact(leadId: number): Promise<{
   phone: string;
   message: string | null;
 } | null> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return null;
   return marketplaceRepository.getOwnedContact(id, leadId);
 }
@@ -150,7 +148,7 @@ export async function updateLeadStatus(
   purchaseId: number,
   status: PurchaseStatus
 ): Promise<MutationResult> {
-  const id = await requireAgent();
+  const id = await requireUser();
   if (!id) return { success: false, error: "Unauthorized." };
   try {
     await marketplaceRepository.updateStatus(id, purchaseId, status);

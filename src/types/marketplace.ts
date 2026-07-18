@@ -25,6 +25,8 @@ export interface MarketLeadCard {
 }
 
 export interface MarketFilter {
+  /** Free-text search across city, locality, property title and type. */
+  search?: string;
   city?: string;
   locality?: string;
   propertyType?: string;

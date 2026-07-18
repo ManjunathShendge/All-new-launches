@@ -24,6 +24,7 @@ import {
   updateLeadStatus,
 } from "@/lib/actions/marketplace.action";
 import { createTopupOrder, verifyTopup } from "@/lib/actions/wallet.action";
+import Select from "@/components/ui/Select";
 import {
   MarketFilter,
   MarketLeadCard,
@@ -33,8 +34,10 @@ import {
 
 /* ------------------------------ helpers ------------------------------ */
 const money = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+// A lead counts as "new" for 3 days after the enquiry (matches the "New" badge).
+const FRESH_WINDOW_MS = 3 * 24 * 3.6e6;
 function isFresh(iso: string | null, now: number): boolean {
-  return iso != null && now - new Date(iso).getTime() < 24 * 3.6e6;
+  return iso != null && now - new Date(iso).getTime() < FRESH_WINDOW_MS;
 }
 
 type RzpResponse = {
@@ -240,6 +243,21 @@ function Browse({
     };
   }, [leads, now]);
 
+  // Per-tab counts so each tab visibly reflects its slice of the data.
+  const tabCounts: Record<BrowseTab, number> = {
+    all: leads.length,
+    available: kpis.available,
+    new: kpis.fresh,
+    owned: kpis.owned,
+  };
+
+  const emptyMessage: Record<BrowseTab, string> = {
+    all: "No leads match your filters.",
+    available: "No available leads match your filters.",
+    new: "No new leads in the last 3 days.",
+    owned: "You haven't purchased any leads yet.",
+  };
+
   const selectedList = useMemo(
     () => leads.filter((l) => selected.has(l.listingId) && !l.owned),
     [leads, selected]
@@ -356,6 +374,14 @@ function Browse({
     });
   };
 
+  const hasActiveFilters =
+    Boolean(filters.search?.trim()) ||
+    Boolean(filters.city?.trim()) ||
+    Boolean(filters.locality?.trim()) ||
+    Boolean(filters.propertyType) ||
+    filters.minPrice != null ||
+    filters.maxPrice != null;
+
   const input =
     "rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-600";
 
@@ -364,7 +390,7 @@ function Browse({
       {/* KPI cards */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi icon={<Layers className="h-4 w-4" />} tone="blue" label="Available Leads" value={kpis.available} />
-        <Kpi icon={<Sparkles className="h-4 w-4" />} tone="amber" label="New (24h)" value={kpis.fresh} />
+        <Kpi icon={<Sparkles className="h-4 w-4" />} tone="amber" label="New (3d)" value={kpis.fresh} />
         <Kpi icon={<BadgeCheck className="h-4 w-4" />} tone="emerald" label="Owned" value={kpis.owned} />
         <Kpi icon={<Wallet className="h-4 w-4" />} tone="slate" label="Avg Price" value={money(kpis.avg)} />
       </div>
@@ -386,13 +412,22 @@ function Browse({
               setTab(id);
               setPage(1);
             }}
-            className={`-mb-px shrink-0 whitespace-nowrap border-b-2 pb-2 text-sm font-medium transition-colors ${
+            className={`-mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 pb-2 text-sm font-medium transition-colors ${
               tab === id
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             {label}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+                tab === id
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {tabCounts[id]}
+            </span>
           </button>
         ))}
       </div>
@@ -402,30 +437,58 @@ function Browse({
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            placeholder="Search city…"
-            value={filters.city ?? ""}
-            onChange={(e) => update({ city: e.target.value }, true)}
-            className={`${input} w-40 pl-8`}
+            placeholder="Search city, locality or project…"
+            value={filters.search ?? ""}
+            onChange={(e) => update({ search: e.target.value }, true)}
+            className={`${input} w-52 pl-8`}
           />
         </div>
-        <input
-          placeholder="Locality"
-          value={filters.locality ?? ""}
-          onChange={(e) => update({ locality: e.target.value }, true)}
-          className={`${input} w-36`}
-        />
-        <select
+        <Select
+          inline
           value={filters.propertyType ?? ""}
           onChange={(e) => update({ propertyType: e.target.value || undefined })}
           className={input}
         >
           <option value="">Any type</option>
-          <option value="apartment">Apartment</option>
-          <option value="villa">Villa</option>
-          <option value="plot">Plot</option>
-          <option value="commercial">Commercial</option>
-        </select>
-        <select
+          <option value="apartment">Apartment / Flat</option>
+          <option value="villa">House / Villa</option>
+          <option value="plot">Plot / Land</option>
+          <option value="office">Office</option>
+          <option value="shop">Shop / Showroom</option>
+          <option value="warehouse">Warehouse / Industrial</option>
+        </Select>
+        {/* Price range */}
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number"
+            min={0}
+            placeholder="Min ₹"
+            value={filters.minPrice ?? ""}
+            onChange={(e) =>
+              update(
+                { minPrice: e.target.value === "" ? undefined : Number(e.target.value) },
+                true
+              )
+            }
+            className={`${input} w-24`}
+          />
+          <span className="text-slate-400">–</span>
+          <input
+            type="number"
+            min={0}
+            placeholder="Max ₹"
+            value={filters.maxPrice ?? ""}
+            onChange={(e) =>
+              update(
+                { maxPrice: e.target.value === "" ? undefined : Number(e.target.value) },
+                true
+              )
+            }
+            className={`${input} w-24`}
+          />
+        </div>
+        <Select
+          inline
           value={filters.sort ?? "newest"}
           onChange={(e) => update({ sort: e.target.value as MarketFilter["sort"] })}
           className={input}
@@ -433,7 +496,20 @@ function Browse({
           <option value="newest">Newest</option>
           <option value="price_low">Price: Low to High</option>
           <option value="price_high">Price: High to Low</option>
-        </select>
+        </Select>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              const reset: MarketFilter = { sort: filters.sort ?? "newest" };
+              setFilters(reset);
+              load(reset);
+            }}
+            className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+          >
+            <X className="h-3.5 w-3.5" /> Clear
+          </button>
+        )}
         <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
           {/* Buy a specific number of leads */}
           <div className="flex items-center overflow-hidden rounded-lg border border-slate-300">
@@ -520,7 +596,7 @@ function Browse({
             ) : pageRows.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-3 py-16 text-center text-slate-500">
-                  No leads match your filters.
+                  {emptyMessage[tab]}
                 </td>
               </tr>
             ) : (

@@ -24,6 +24,7 @@ import {
   deleteShowcase,
   toggleShowcaseActive,
 } from "@/lib/actions/premium-showcase.action";
+import Select from "@/components/ui/Select";
 import { compressImage, uploadFileToR2 } from "@/lib/r2/upload";
 import {
   SHOWCASE_STATUS_LABEL,
@@ -446,7 +447,7 @@ function ShowcaseForm({
             />
           </Field>
           <Field label="Listing category">
-            <select
+            <Select
               className={input}
               value={draft.listingCategory}
               onChange={(e) =>
@@ -455,7 +456,7 @@ function ShowcaseForm({
             >
               <option value="company">Company Project</option>
               <option value="sponsored">Sponsored Project</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Short description">
             <input
@@ -542,7 +543,7 @@ function ShowcaseForm({
             />
           </Field>
           <Field label="Project status">
-            <select
+            <Select
               className={input}
               value={draft.status}
               onChange={(e) => set("status", e.target.value as ShowcaseStatus)}
@@ -552,7 +553,7 @@ function ShowcaseForm({
                   {SHOWCASE_STATUS_LABEL[s]}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Rating (0–5)">
             <input

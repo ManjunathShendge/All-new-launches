@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Lead } from "@/types/lead";
 import { setMyLeadStatus } from "@/lib/actions/agent-lead.action";
+import Select from "@/components/ui/Select";
 
 const STATUS_OPTIONS = ["new", "contacted", "closed", "lost"];
 
@@ -129,7 +130,8 @@ export default function LeadsTable({
                     {statusOf(lead)}
                   </span>
                 ) : (
-                  <select
+                  <Select
+                    inline
                     value={statusOf(lead)}
                     onChange={(e) => change(lead.id, e.target.value)}
                     className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium capitalize outline-none ring-1 ring-inset ring-black/5 ${statusClass(
@@ -142,7 +144,7 @@ export default function LeadsTable({
                         {s}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </td>
             </tr>

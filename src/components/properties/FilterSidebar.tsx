@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
+import Select from "@/components/ui/Select";
 
 const TRANSACTION_TYPES = [
   { value: "", label: "Any" },
@@ -90,8 +91,10 @@ export default function FilterSidebar() {
   const [open, setOpen] = useState(false);
 
   // Keep local state in sync when the URL changes (e.g. Reset elsewhere).
+  // Deferred a frame so it isn't a synchronous set-state inside the effect.
   useEffect(() => {
-    setFields(readFromUrl());
+    const id = requestAnimationFrame(() => setFields(readFromUrl()));
+    return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -120,7 +123,8 @@ export default function FilterSidebar() {
   const body = (
     <div className="flex flex-col gap-5">
       <Field label="Transaction Type">
-        <select
+        <Select
+          wrapperClassName="w-full"
           className={selectClass}
           value={fields.transactionType}
           onChange={(e) => set("transactionType", e.target.value)}
@@ -130,11 +134,12 @@ export default function FilterSidebar() {
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Category">
-        <select
+        <Select
+          wrapperClassName="w-full"
           className={selectClass}
           value={fields.propertyCategory}
           onChange={(e) => set("propertyCategory", e.target.value)}
@@ -144,11 +149,12 @@ export default function FilterSidebar() {
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Property Type">
-        <select
+        <Select
+          wrapperClassName="w-full"
           className={selectClass}
           value={fields.propertyType}
           onChange={(e) => set("propertyType", e.target.value)}
@@ -158,11 +164,12 @@ export default function FilterSidebar() {
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Configuration">
-        <select
+        <Select
+          wrapperClassName="w-full"
           className={selectClass}
           value={fields.configuration}
           onChange={(e) => set("configuration", e.target.value)}
@@ -172,7 +179,7 @@ export default function FilterSidebar() {
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="City">

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { profileRepository } from "@/lib/supabase/profile.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
 import MarketplaceBrowser from "@/components/marketplace/MarketplaceBrowser";
 import {
@@ -53,15 +52,9 @@ export default async function LeadsMarketplacePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let isAgent = false;
+  // Every signed-in user gets the live marketplace; signed-out visitors see
+  // the landing page.
   if (user) {
-    const profile = await profileRepository.getSessionProfile(user.id);
-    isAgent =
-      profile?.accountType === "agent" || profile?.accountType === "owner";
-  }
-
-  // Agents/owners get the live marketplace; everyone else gets the landing.
-  if (isAgent && user) {
     const balance = await walletRepository.getBalance(user.id);
     return <MarketplaceBrowser initialBalance={balance} />;
   }
@@ -80,18 +73,12 @@ export default async function LeadsMarketplacePage() {
           only the leads you want and start closing — no subscriptions.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          {isAgent ? (
-            <span className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900">
-              Browsing opens soon — you&apos;re all set as an agent
-            </span>
-          ) : (
-            <Link
-              href="/auth"
-              className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-            >
-              Sign in as an agent to get started
-            </Link>
-          )}
+          <Link
+            href="/auth"
+            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+          >
+            Sign in to get started
+          </Link>
         </div>
       </div>
 

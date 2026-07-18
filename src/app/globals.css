@@ -125,6 +125,27 @@ textarea {
   font: inherit;
 }
 
+/* Consistent, well-padded dropdowns site-wide. Replaces the cramped native
+   arrow with a custom chevron that always keeps space from the right edge, and
+   reserves room so the selected text never runs under it. Unlayered so it wins
+   over Tailwind `px-*` utilities on individual selects. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.05rem;
+  padding-left: 0.75rem;
+  padding-right: 2.25rem;
+}
+
+/* Hide the legacy arrow IE/Edge draws on top of our custom one. */
+select::-ms-expand {
+  display: none;
+}
+
 img {
   max-width: 100%;
 }

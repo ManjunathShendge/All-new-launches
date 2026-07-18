@@ -17,6 +17,7 @@ import {
   deleteEvent,
   setEventStatus,
 } from "@/lib/actions/event-admin.action";
+import Select from "@/components/ui/Select";
 import {
   AdminEventRow,
   EventInput,
@@ -388,7 +389,7 @@ export default function AdminEvents() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Category">
-              <select
+              <Select
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
                 className={inputClass}
@@ -399,10 +400,10 @@ export default function AdminEvents() {
                     {c.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field label="Status">
-              <select
+              <Select
                 value={form.status}
                 onChange={(e) => set("status", e.target.value as EventStatus)}
                 className={inputClass}
@@ -410,7 +411,7 @@ export default function AdminEvents() {
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
                 <option value="cancelled">Cancelled</option>
-              </select>
+              </Select>
               <span className="mt-1 block text-xs text-slate-400">
                 Only Published events appear on the public Events page.
               </span>
@@ -594,7 +595,8 @@ export default function AdminEvents() {
                       {fmtDate(ev.startsAt)}
                     </td>
                     <td className="px-4 py-3">
-                      <select
+                      <Select
+                        inline
                         value={ev.status}
                         onChange={(e) =>
                           act(() =>
@@ -615,7 +617,7 @@ export default function AdminEvents() {
                         <option value="cancelled" className="bg-white font-normal text-slate-900">
                           Cancelled
                         </option>
-                      </select>
+                      </Select>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {ev.registeredCount}

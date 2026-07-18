@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import type { Lead, LeadApprovalStatus } from "@/types/lead";
 import type { AssignableAgent } from "@/lib/supabase/lead.repository";
+import Select from "@/components/ui/Select";
 import {
   approveLead,
   disapproveLead,
@@ -209,7 +210,8 @@ export default function LeadModeration({
                             </button>
                           )}
                         </div>
-                        <select
+                        <Select
+                          inline
                           disabled={rowBusy}
                           defaultValue=""
                           onChange={(e) => {
@@ -227,7 +229,7 @@ export default function LeadModeration({
                               {a.name} ({a.accountType})
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       </div>
                     </td>
                   </tr>

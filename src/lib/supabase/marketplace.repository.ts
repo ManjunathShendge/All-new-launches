@@ -134,15 +134,28 @@ export class MarketplaceRepository {
       };
     });
 
-    const inc = (v: string | null, q: string) =>
-      (v ?? "").toLowerCase().includes(q.toLowerCase());
-    if (filter.city) cards = cards.filter((c) => inc(c.city, filter.city!));
-    if (filter.locality)
-      cards = cards.filter((c) => inc(c.locality, filter.locality!));
-    if (filter.propertyType)
+    // Case-insensitive substring match. `property_type` is stored as free text
+    // (e.g. "Apartment / Flat", "Independent House / Villa", "Office Space"),
+    // so an exact match never works — match on a keyword instead.
+    const inc = (v: string | null, q: string) => {
+      const needle = q.trim().toLowerCase();
+      return needle === "" || (v ?? "").toLowerCase().includes(needle);
+    };
+    // One forgiving search box: match city OR locality OR title OR type.
+    if (filter.search?.trim())
       cards = cards.filter(
-        (c) => (c.propertyType ?? "").toLowerCase() === filter.propertyType!.toLowerCase()
+        (c) =>
+          inc(c.city, filter.search!) ||
+          inc(c.locality, filter.search!) ||
+          inc(c.propertyTitle, filter.search!) ||
+          inc(c.propertyType, filter.search!)
       );
+    if (filter.city?.trim())
+      cards = cards.filter((c) => inc(c.city, filter.city!));
+    if (filter.locality?.trim())
+      cards = cards.filter((c) => inc(c.locality, filter.locality!));
+    if (filter.propertyType?.trim())
+      cards = cards.filter((c) => inc(c.propertyType, filter.propertyType!));
     if (filter.minPrice != null)
       cards = cards.filter((c) => (c.maxPrice ?? c.minPrice ?? 0) >= filter.minPrice!);
     if (filter.maxPrice != null)

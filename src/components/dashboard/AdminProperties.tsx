@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Eye, X, ChevronLeft, ChevronRight, Check, Ban } from "lucide-react";
+import Select from "@/components/ui/Select";
 import type {
   AdminPropertyFilter,
   AdminPropertyPage,
@@ -236,7 +237,8 @@ export default function AdminProperties({
             >
               <span className="text-slate-500">{cfg.label}:</span>
               {cfg.kind === "select" ? (
-                <select
+                <Select
+                  inline
                   value={filter[field] ?? ""}
                   onChange={(e) => setValue(field, e.target.value)}
                   className="bg-transparent font-medium text-slate-800 outline-none"
@@ -246,7 +248,7 @@ export default function AdminProperties({
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               ) : (
                 <input
                   autoFocus
@@ -269,7 +271,8 @@ export default function AdminProperties({
         })}
 
         {inactive.length > 0 && (
-          <select
+          <Select
+            inline
             value=""
             onChange={(e) => {
               if (e.target.value) addFilter(e.target.value as FieldId);
@@ -283,7 +286,7 @@ export default function AdminProperties({
                 {FIELDS[f].label}
               </option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 

@@ -3,7 +3,6 @@
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { profileRepository } from "@/lib/supabase/profile.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
 import { notifyUser } from "@/lib/notify";
 
@@ -14,17 +13,13 @@ const RZP_PUBLIC = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? RZP_KEY;
 const MIN_TOPUP = 1; // ₹
 const MAX_TOPUP = 100000; // ₹
 
-async function requireAgentId(): Promise<string | null> {
+/** Any signed-in user may fund their wallet — the marketplace is open to all. */
+async function requireUserId(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
-  const profile = await profileRepository.getSessionProfile(user.id);
-  if (profile?.accountType !== "agent" && profile?.accountType !== "owner") {
-    return null;
-  }
-  return user.id;
+  return user?.id ?? null;
 }
 
 export interface TopupOrder {
@@ -38,8 +33,8 @@ export interface TopupOrder {
 
 /** Create a Razorpay order for a wallet top-up. */
 export async function createTopupOrder(amount: number): Promise<TopupOrder> {
-  const id = await requireAgentId();
-  if (!id) return { ok: false, error: "Sign in as an agent." };
+  const id = await requireUserId();
+  if (!id) return { ok: false, error: "Sign in to continue." };
   if (!RZP_KEY || !RZP_SECRET) {
     return { ok: false, error: "Payments are not configured yet." };
   }
@@ -90,7 +85,7 @@ export async function verifyTopup(
   paymentId: string,
   signature: string
 ): Promise<VerifyResult> {
-  const id = await requireAgentId();
+  const id = await requireUserId();
   if (!id) return { ok: false, error: "Unauthorized." };
   if (!RZP_KEY || !RZP_SECRET) {
     return { ok: false, error: "Payments are not configured." };

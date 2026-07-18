@@ -1,14 +1,14 @@
 "use client";
 
-import { 
-  Plus, 
-  Phone, 
-  CheckCircle2, 
-  Sparkles, 
-  ShieldCheck, 
-  Headphones, 
-  ChevronDown 
+import {
+  Plus,
+  Phone,
+  CheckCircle2,
+  Sparkles,
+  ShieldCheck,
+  Headphones,
 } from "lucide-react";
+import Select from "@/components/ui/Select";
 
 export default function PropertyCTASection() {
   return (
@@ -84,30 +84,24 @@ export default function PropertyCTASection() {
             </div>
             
             {/* Custom Selects */}
-            <div className="relative">
-              <select 
-                className="w-full appearance-none rounded-lg border border-[#c6c6cd] bg-[#fcf8fa] px-4 py-3 text-[16px] text-[#1b1b1d] transition-colors focus:border-[#0051d5] focus:bg-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#0051d5]"
-                defaultValue=""
-              >
-                <option value="" disabled className="text-[#76777d]">Apartment</option>
-                <option value="house">House / Villa</option>
-                <option value="commercial">Commercial Property</option>
-                <option value="plot">Plot / Land</option>
-              </select>
-              <ChevronDown size={20} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#76777d]" />
-            </div>
+            <Select
+              className="w-full rounded-lg border border-[#c6c6cd] bg-[#fcf8fa] px-4 py-3 text-[16px] text-[#1b1b1d] transition-colors focus:border-[#0051d5] focus:bg-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#0051d5]"
+              defaultValue=""
+            >
+              <option value="" disabled className="text-[#76777d]">Apartment</option>
+              <option value="house">House / Villa</option>
+              <option value="commercial">Commercial Property</option>
+              <option value="plot">Plot / Land</option>
+            </Select>
 
-            <div className="relative">
-              <select 
-                className="w-full appearance-none rounded-lg border border-[#c6c6cd] bg-[#fcf8fa] px-4 py-3 text-[16px] text-[#1b1b1d] transition-colors focus:border-[#0051d5] focus:bg-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#0051d5]"
-                defaultValue=""
-              >
-                <option value="" disabled className="text-[#76777d]">Sell</option>
-                <option value="rent">Rent</option>
-                <option value="lease">Lease</option>
-              </select>
-              <ChevronDown size={20} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#76777d]" />
-            </div>
+            <Select
+              className="w-full rounded-lg border border-[#c6c6cd] bg-[#fcf8fa] px-4 py-3 text-[16px] text-[#1b1b1d] transition-colors focus:border-[#0051d5] focus:bg-[#ffffff] focus:outline-none focus:ring-1 focus:ring-[#0051d5]"
+              defaultValue=""
+            >
+              <option value="" disabled className="text-[#76777d]">Sell</option>
+              <option value="rent">Rent</option>
+              <option value="lease">Lease</option>
+            </Select>
 
             {/* Submit CTA */}
             <button 

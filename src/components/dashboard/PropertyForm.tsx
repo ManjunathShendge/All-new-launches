@@ -19,6 +19,7 @@ import type { Purpose, Category } from "@/lib/dashboard/wizard.config";
 import { PURPOSE_LABEL, CATEGORY_LABEL } from "@/lib/dashboard/wizard.config";
 import { compressImage, uploadFileToR2 } from "@/lib/r2/upload";
 import { createProperty } from "@/lib/actions/property-create.action";
+import Select from "@/components/ui/Select";
 import Link from "next/link";
 
 /* ----------------------------- options ----------------------------- */
@@ -709,7 +710,8 @@ export default function PropertyForm({
       {/* Global area unit */}
       <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 px-4 py-3">
         <span className="text-sm font-medium text-slate-600">Enter areas in</span>
-        <select
+        <Select
+          inline
           value={form.areaUnit}
           onChange={(e) => set("areaUnit", e.target.value)}
           className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-blue-600"
@@ -719,7 +721,7 @@ export default function PropertyForm({
               {u}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {error && (
@@ -883,7 +885,7 @@ export default function PropertyForm({
             ) : (
               <>
                 <Field label="Property Type" required hint="The specific type you're listing">
-                  <select
+                  <Select
                     value={form.propertyType}
                     onChange={(e) => set("propertyType", e.target.value)}
                     className={input}
@@ -896,7 +898,7 @@ export default function PropertyForm({
                         </option>
                       ))}
                     </optgroup>
-                  </select>
+                  </Select>
                 </Field>
 
                 {/* Price — conditional on transaction (+ industrial extras) */}
@@ -975,16 +977,16 @@ export default function PropertyForm({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Floor Number">
-                <select value={form.floorNumber} onChange={(e) => set("floorNumber", e.target.value)} className={input}>
+                <Select value={form.floorNumber} onChange={(e) => set("floorNumber", e.target.value)} className={input}>
                   <option value="">Select</option>
                   {FLOOR_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Washroom">
-                <select value={form.washroom} onChange={(e) => set("washroom", e.target.value)} className={input}>
+                <Select value={form.washroom} onChange={(e) => set("washroom", e.target.value)} className={input}>
                   <option value="">Select</option>
                   {WASHROOM_OPTIONS.map((w) => <option key={w} value={w}>{w}</option>)}
-                </select>
+                </Select>
               </Field>
             </div>
 
@@ -1023,22 +1025,22 @@ export default function PropertyForm({
             {isResidential && (
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Bedrooms (BHK)">
-                  <select value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} className={input}>
+                  <Select value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} className={input}>
                     <option value="">Select</option>
                     {BHK.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Bathrooms">
-                  <select value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} className={input}>
+                  <Select value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} className={input}>
                     <option value="">Select</option>
                     {BHK.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Balconies">
-                  <select value={form.balconies} onChange={(e) => set("balconies", e.target.value)} className={input}>
+                  <Select value={form.balconies} onChange={(e) => set("balconies", e.target.value)} className={input}>
                     <option value="">Select</option>
                     {["0", "1", "2", "3", "4+"].map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  </Select>
                 </Field>
               </div>
             )}
@@ -1057,10 +1059,10 @@ export default function PropertyForm({
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Furnishing">
-                <select value={form.furnishing} onChange={(e) => set("furnishing", e.target.value)} className={input}>
+                <Select value={form.furnishing} onChange={(e) => set("furnishing", e.target.value)} className={input}>
                   <option value="">Select</option>
                   {FURNISHING.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Floor Number">
                 <input type="number" value={form.floorNumber} onChange={(e) => set("floorNumber", e.target.value)} placeholder="e.g. 4" className={input} />
@@ -1072,10 +1074,10 @@ export default function PropertyForm({
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Facing">
-                <select value={form.facing} onChange={(e) => set("facing", e.target.value)} className={input}>
+                <Select value={form.facing} onChange={(e) => set("facing", e.target.value)} className={input}>
                   <option value="">Select</option>
                   {FACING.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Covered Parking">
                 <input type="number" value={form.coveredParking} onChange={(e) => set("coveredParking", e.target.value)} placeholder="e.g. 1" className={input} />
@@ -1198,10 +1200,10 @@ export default function PropertyForm({
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Ownership Type">
-                      <select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
+                      <Select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {ownershipOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                     {/* Lease/Rent land drops RERA; sale keeps it. */}
                     {!isRentLike && (
@@ -1218,7 +1220,7 @@ export default function PropertyForm({
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Possession Status">
-                      <select
+                      <Select
                         value={form.possessionStatus}
                         onChange={(e) => {
                           const v = e.target.value;
@@ -1237,24 +1239,24 @@ export default function PropertyForm({
                       >
                         <option value="">Select</option>
                         {POSSESSION.map((p) => <option key={p} value={p}>{p}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                     {/* New Launch / Under Construction → ask for expected possession. */}
                     {showExpectedPossession ? (
                       <Field label="Expected Possession">
                         <div className="grid grid-cols-2 gap-2">
-                          <select value={form.possessionMonth} onChange={(e) => set("possessionMonth", e.target.value)} className={input}>
+                          <Select value={form.possessionMonth} onChange={(e) => set("possessionMonth", e.target.value)} className={input}>
                             <option value="">Month</option>
                             {MONTHS.map((m, i) => (
                               <option key={m} value={String(i + 1)}>{m}</option>
                             ))}
-                          </select>
-                          <select value={form.possessionYear} onChange={(e) => set("possessionYear", e.target.value)} className={input}>
+                          </Select>
+                          <Select value={form.possessionYear} onChange={(e) => set("possessionYear", e.target.value)} className={input}>
                             <option value="">Year</option>
                             {POSSESSION_YEARS.map((y) => (
                               <option key={y} value={y}>{y}</option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                       </Field>
                     ) : (
@@ -1280,16 +1282,16 @@ export default function PropertyForm({
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Ownership Type">
-                      <select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
+                      <Select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {ownershipOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                     <Field label="Property Age">
-                      <select value={form.propertyAgeCategory} onChange={(e) => set("propertyAgeCategory", e.target.value)} className={input}>
+                      <Select value={form.propertyAgeCategory} onChange={(e) => set("propertyAgeCategory", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {PROPERTY_AGE.map((a) => <option key={a} value={a}>{a}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                   </div>
                   <div className="mt-3">
@@ -1300,25 +1302,25 @@ export default function PropertyForm({
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Possession Status">
-                      <select value={form.possessionStatus} onChange={(e) => set("possessionStatus", e.target.value)} className={input}>
+                      <Select value={form.possessionStatus} onChange={(e) => set("possessionStatus", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {POSSESSION.map((p) => <option key={p} value={p}>{p}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                     <Field label="Ownership Type">
-                      <select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
+                      <Select value={form.ownershipType} onChange={(e) => set("ownershipType", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {ownershipOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                     <Field label="RERA ID">
                       <input value={form.reraId} onChange={(e) => set("reraId", e.target.value)} placeholder="RERA registration number" className={input} />
                     </Field>
                     <Field label="Property Age">
-                      <select value={form.propertyAgeCategory} onChange={(e) => set("propertyAgeCategory", e.target.value)} className={input}>
+                      <Select value={form.propertyAgeCategory} onChange={(e) => set("propertyAgeCategory", e.target.value)} className={input}>
                         <option value="">Select</option>
                         {PROPERTY_AGE.map((a) => <option key={a} value={a}>{a}</option>)}
-                      </select>
+                      </Select>
                     </Field>
                   </div>
                   <div className="mt-3">
