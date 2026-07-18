@@ -11,6 +11,7 @@ export interface AdminProperty {
   propertyCategory: string | null;
   transactionType: string | null;
   possessionStatus: string | null;
+  status: string | null;
   agentName: string | null;
   createdAt: string | null;
 }
@@ -18,9 +19,11 @@ export interface AdminProperty {
 export interface AdminPropertyFilter {
   name?: string;
   category?: string;
+  listing?: string;
   type?: string;
   transaction?: string;
   scope?: string;
+  status?: string;
 }
 
 export interface AdminPropertyPage {
@@ -29,7 +32,7 @@ export interface AdminPropertyPage {
 }
 
 const PROPERTY_COLUMNS =
-  "id, slug, title, property_type, property_category, transaction_type, possession_status, user_id, created_at";
+  "id, slug, title, property_type, property_category, transaction_type, possession_status, status, user_id, created_at";
 
 /** Attach lister display names (properties.user_id -> profiles.old_wp_user_id). */
 async function withAgentNames(
@@ -67,6 +70,7 @@ async function withAgentNames(
     propertyCategory: (r.property_category as string | null) ?? null,
     transactionType: (r.transaction_type as string | null) ?? null,
     possessionStatus: (r.possession_status as string | null) ?? null,
+    status: (r.status as string | null) ?? null,
     agentName:
       r.user_id != null ? names.get(r.user_id as number) ?? null : null,
     createdAt: (r.created_at as string | null) ?? null,
@@ -91,10 +95,15 @@ export async function getAdminPropertiesPage(
 
   if (filter.name) query = query.ilike("title", `%${filter.name}%`);
   if (filter.category) query = query.eq("property_category", filter.category);
-  if (filter.type) query = query.eq("property_type", filter.type);
+  if (filter.listing) query = query.eq("listing_entity", filter.listing);
+  // Property types are stored underscore-coded (e.g. "independent_house_villa")
+  // and new projects keep them in available_property_types — match partially.
+  if (filter.type)
+    query = query.ilike("available_property_types", `%${filter.type}%`);
   if (filter.transaction)
     query = query.eq("transaction_type", filter.transaction);
   if (filter.scope) query = query.ilike("possession_status", `%${filter.scope}%`);
+  if (filter.status) query = query.eq("status", filter.status);
 
   const safePage = Math.max(1, page);
   const from = (safePage - 1) * pageSize;

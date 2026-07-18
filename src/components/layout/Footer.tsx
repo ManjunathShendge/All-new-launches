@@ -9,7 +9,6 @@ import {
   FaFacebook,
   FaLinkedin,
   FaTwitter,
-  FaYoutube,
 } from "react-icons/fa";
 
 // Updated data structure to include links
@@ -125,15 +124,16 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="mt-8 flex items-center gap-3">
               {[
-                { icon: FaInstagram, href: "#" },
-                { icon: FaFacebook, href: "#" },
-                { icon: FaLinkedin, href: "#" },
-                { icon: FaTwitter, href: "#" },
-                { icon: FaYoutube, href: "#" },
+                { icon: FaInstagram, href: "https://www.instagram.com/allnewlaunches/" },
+                { icon: FaFacebook, href: "https://www.facebook.com/profile.php?id=61587237071959" },
+                { icon: FaLinkedin, href: "https://www.linkedin.com/in/allnew-launches-8474b73aa/" },
+                { icon: FaTwitter, href: "https://x.com/allnewlaunches" },
               ].map(({ icon: Icon, href }, index) => (
                 <motion.a
                   key={index}
                   href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ y: -4, scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ duration: 0.2 }}
@@ -170,22 +170,22 @@ export default function Footer() {
         {/* Disclaimer Section */}
         <div className="mt-16 border-t border-[#3f465c] pt-8">
           <p className="text-[12px] leading-[1.7] text-[#7c839b]">
-            <strong className="text-white">Disclaimer:</strong> XTA is an
-            advertising website to connect buyers and sellers. It is not any
+            <strong className="text-white">Disclaimer:</strong> All New Launches
+            is an advertising website to connect buyers and sellers. It is not any
             party to a transaction, and it will not be responsible or liable for
             the resolution of disputes to any of the parties. Every information
             falling under the purview of this website, including facts and
             figures, must be verified by the user before any transaction takes
             place. Information can be verified from the RERA website of the
-            respective state where the Project is located. XTA is acting as an
-            advertising platform and has not validated the compliance of these
+            respective state where the Project is located. All New Launches is
+            acting as an advertising platform and has not validated the compliance of these
             Projects under RERA. We are not acting as a Real Estate Agent so we
             have no means to know actual real estate sale/purchase transactions
             being made by the users of this Website and the parties, and we
             therefore disclaim all liability and responsibility under RERA.
           </p>
           <div className="mt-8 text-[12px] text-[#bec6e0]">
-            © 2026 XTA Real Estate. All rights reserved.
+            © 2026 All New Launches. All rights reserved.
           </div>
         </div>
       </div>

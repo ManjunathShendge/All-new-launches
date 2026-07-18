@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { marketplaceRepository } from "@/lib/supabase/marketplace.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
+import { notifyUser, notifyAdmins } from "@/lib/notify";
 import {
+  BulkPurchaseResult,
   MarketFilter,
   MarketLeadCard,
   PurchaseResult,
@@ -13,6 +15,10 @@ import {
   PurchasedLead,
   WalletTx,
 } from "@/types/marketplace";
+
+// Hard cap on ids accepted from the client in one call (defence-in-depth; the
+// SQL function also caps at 5000).
+const MAX_BULK = 5000;
 
 export interface MutationResult {
   success: boolean;
@@ -59,6 +65,67 @@ export async function purchaseLead(listingId: number): Promise<PurchaseResult> {
   const res = await marketplaceRepository.purchase(id, listingId);
   if (res.ok) revalidatePath("/leads-marketplace");
   return res;
+}
+
+/** Buy a specific set of selected leads in one atomic transaction. */
+export async function buyLeads(
+  listingIds: number[]
+): Promise<BulkPurchaseResult> {
+  const id = await requireAgent();
+  if (!id) return { ok: false, error: "Sign in as an agent to buy leads." };
+
+  // Sanitize: unique positive integers, capped.
+  const ids = [
+    ...new Set(
+      (listingIds ?? []).filter((n) => Number.isInteger(n) && n > 0)
+    ),
+  ];
+  if (ids.length === 0) return { ok: false, error: "No leads selected." };
+  if (ids.length > MAX_BULK)
+    return { ok: false, error: `You can buy at most ${MAX_BULK} leads at once.` };
+
+  const res = await marketplaceRepository.purchaseMany(id, ids);
+  if (res.ok) {
+    await notifyPurchase(id, res.bought ?? 0, res.spent ?? 0);
+    revalidatePath("/leads-marketplace");
+  }
+  return res;
+}
+
+/** Buy every available (unowned) lead matching the current filters. */
+export async function buyAllAvailable(
+  filter: MarketFilter = {}
+): Promise<BulkPurchaseResult> {
+  const id = await requireAgent();
+  if (!id) return { ok: false, error: "Sign in as an agent to buy leads." };
+
+  const ids = await marketplaceRepository.availableListingIds(id, filter);
+  if (ids.length === 0)
+    return { ok: false, error: "No available leads match your filters." };
+
+  const res = await marketplaceRepository.purchaseMany(id, ids.slice(0, MAX_BULK));
+  if (res.ok) {
+    await notifyPurchase(id, res.bought ?? 0, res.spent ?? 0);
+    revalidatePath("/leads-marketplace");
+  }
+  return res;
+}
+
+/** Shared notification for a successful marketplace purchase. */
+async function notifyPurchase(buyerId: string, bought: number, spent: number) {
+  const rupees = `₹${Math.round(spent).toLocaleString("en-IN")}`;
+  await notifyUser(buyerId, {
+    type: "purchase",
+    title: `${bought} lead${bought === 1 ? "" : "s"} unlocked`,
+    body: `You spent ${rupees}. Find the contacts under My Leads.`,
+    link: "/leads-marketplace",
+  });
+  await notifyAdmins({
+    type: "marketplace_purchase",
+    title: "Marketplace sale",
+    body: `An agent purchased ${bought} lead${bought === 1 ? "" : "s"} for ${rupees}.`,
+    link: "/admin/dashboard",
+  });
 }
 
 export async function getMyPurchasedLeads(): Promise<PurchasedLead[]> {

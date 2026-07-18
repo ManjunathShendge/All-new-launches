@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { leadApi } from "@/lib/api/lead.api";
 import { CreateLeadInput } from "@/types/lead";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { notificationRepository } from "@/lib/supabase/notification.repository";
 
 export interface SubmitLeadResult {
   success: boolean;
@@ -58,6 +60,56 @@ export async function submitLead(input: CreateLeadInput): Promise<SubmitLeadResu
       message,
       propertyUrl: input.propertyUrl,
     });
+
+    // Notify the listing's agent/owner (best-effort; never fails the enquiry).
+    try {
+      const db = createServiceRoleClient();
+      const { data: prop } = await db
+        .from("properties")
+        .select("user_id, title, slug")
+        .eq("id", Number(input.propertyId))
+        .maybeSingle();
+      const propTitle = (prop?.title as string | null) ?? "the property";
+      const propLink = prop?.slug ? `/properties/${prop.slug as string}` : null;
+
+      // Notify the listing's agent/owner.
+      if (prop?.user_id != null) {
+        const { data: lister } = await db
+          .from("profiles")
+          .select("id, account_type")
+          .eq("old_wp_user_id", prop.user_id)
+          .maybeSingle();
+        if (lister?.id) {
+          await notificationRepository.createForMany([lister.id as string], {
+            type: "new_lead",
+            title: "New enquiry on your listing",
+            body: `${name} enquired about "${propTitle}".`,
+            link:
+              lister.account_type === "owner"
+                ? "/owner/dashboard"
+                : "/agent/dashboard",
+          });
+        }
+      }
+
+      // Confirmation to the enquirer if they have an account.
+      const { data: me } = await db
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (me?.id) {
+        await notificationRepository.createForMany([me.id as string], {
+          type: "enquiry_sent",
+          title: "Enquiry sent",
+          body: `Your details were shared for "${propTitle}". The agent will reach out soon.`,
+          link: propLink,
+        });
+      }
+    } catch {
+      /* notification best-effort */
+    }
+
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong.";

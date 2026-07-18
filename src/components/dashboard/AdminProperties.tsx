@@ -2,13 +2,38 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, X, ChevronLeft, ChevronRight, Check, Ban } from "lucide-react";
 import type {
   AdminPropertyFilter,
   AdminPropertyPage,
 } from "@/lib/admin/admin-queries";
 import { ADMIN_PROPERTIES_PAGE_SIZE as PAGE_SIZE } from "@/lib/admin/constants";
-import { fetchAdminProperties } from "@/lib/actions/admin-properties.action";
+import {
+  fetchAdminProperties,
+  setPropertyStatus,
+  type ReviewStatus,
+} from "@/lib/actions/admin-properties.action";
+
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+  approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  rejected: { label: "Disapproved", className: "bg-red-50 text-red-700 ring-red-600/20" },
+  disapproved: { label: "Disapproved", className: "bg-red-50 text-red-700 ring-red-600/20" },
+};
+
+function StatusBadge({ status }: { status: string | null }) {
+  const key = (status ?? "").toLowerCase();
+  const s =
+    STATUS_STYLES[key] ??
+    { label: titleCase(status) === "—" ? "Approved" : titleCase(status), className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" };
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${s.className}`}
+    >
+      {s.label}
+    </span>
+  );
+}
 
 type FieldId = keyof AdminPropertyFilter; // "name" | "category" | ...
 
@@ -19,6 +44,16 @@ const FIELDS: Record<
   name: { label: "Name", kind: "text" },
   category: {
     label: "Category",
+    kind: "select",
+    options: [
+      { value: "residential", label: "Residential" },
+      { value: "commercial", label: "Commercial" },
+      { value: "industrial", label: "Industrial" },
+      { value: "land", label: "Land / Plot" },
+    ],
+  },
+  listing: {
+    label: "Listing",
     kind: "select",
     options: [
       { value: "new_project", label: "New Project" },
@@ -32,7 +67,9 @@ const FIELDS: Record<
       { value: "apartment", label: "Apartment" },
       { value: "villa", label: "Villa" },
       { value: "plot", label: "Plot" },
-      { value: "commercial", label: "Commercial" },
+      { value: "office", label: "Office" },
+      { value: "shop", label: "Shop" },
+      { value: "warehouse", label: "Warehouse" },
     ],
   },
   transaction: {
@@ -52,9 +89,26 @@ const FIELDS: Record<
       { value: "upcoming", label: "Upcoming" },
     ],
   },
+  status: {
+    label: "Status",
+    kind: "select",
+    options: [
+      { value: "pending", label: "Pending" },
+      { value: "approved", label: "Approved" },
+      { value: "rejected", label: "Disapproved" },
+    ],
+  },
 };
 
-const FIELD_ORDER: FieldId[] = ["name", "category", "type", "transaction", "scope"];
+const FIELD_ORDER: FieldId[] = [
+  "name",
+  "category",
+  "listing",
+  "type",
+  "transaction",
+  "scope",
+  "status",
+];
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -102,6 +156,7 @@ export default function AdminProperties({
   const [active, setActive] = useState<FieldId[]>([]);
   const [filter, setFilter] = useState<AdminPropertyFilter>({});
   const [pending, startTransition] = useTransition();
+  const [busyId, setBusyId] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
@@ -112,6 +167,17 @@ export default function AdminProperties({
       setRows(res.rows);
       setCount(res.count);
       setPage(nextPage);
+    });
+  };
+
+  const changeStatus = (id: number, status: ReviewStatus) => {
+    setBusyId(id);
+    startTransition(async () => {
+      const res = await setPropertyStatus(id, status);
+      if (res.ok) {
+        setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r)));
+      }
+      setBusyId(null);
     });
   };
 
@@ -235,14 +301,15 @@ export default function AdminProperties({
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Scope</th>
               <th className="px-4 py-3 font-medium">Agent</th>
+              <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 text-right font-medium">View</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
                   No properties match your filters.
                 </td>
               </tr>
@@ -270,11 +337,36 @@ export default function AdminProperties({
                   <td className="px-4 py-3 text-slate-600">
                     {p.agentName ?? "—"}
                   </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={p.status} />
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">
                     {formatDate(p.createdAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-end gap-1">
+                      {(p.status ?? "").toLowerCase() !== "approved" && (
+                        <button
+                          type="button"
+                          disabled={busyId === p.id}
+                          onClick={() => changeStatus(p.id, "approved")}
+                          className="rounded-md p-2 text-emerald-600 hover:bg-emerald-50 disabled:opacity-40"
+                          title="Approve"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      )}
+                      {(p.status ?? "").toLowerCase() !== "rejected" && (
+                        <button
+                          type="button"
+                          disabled={busyId === p.id}
+                          onClick={() => changeStatus(p.id, "rejected")}
+                          className="rounded-md p-2 text-red-500 hover:bg-red-50 disabled:opacity-40"
+                          title="Disapprove"
+                        >
+                          <Ban className="h-4 w-4" />
+                        </button>
+                      )}
                       {p.slug ? (
                         <Link
                           href={`/properties/${p.slug}`}

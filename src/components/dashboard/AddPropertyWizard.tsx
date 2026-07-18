@@ -36,6 +36,7 @@ import {
   type IconKey,
 } from "@/lib/dashboard/wizard.config";
 import PropertyFormScaffold from "./PropertyFormScaffold";
+import PropertyForm from "./PropertyForm";
 
 const ICONS: Record<IconKey, LucideIcon> = {
   tag: Tag,
@@ -94,6 +95,42 @@ export default function AddPropertyWizard() {
 
   if (showForm && purpose && category) {
     const resolved = resolvedListingType(purpose, category, listingType);
+
+    // These flows all use the full property form; it adapts its fields to the
+    // purpose / category / listing type:
+    //   Sell → Residential/Commercial (Single Unit or New Project)
+    //   Sell → Industrial, Sell → Land/Plot
+    //   Rent → Residential/Commercial/Industrial  (Rent has no Land/Plot)
+    //   Lease → Commercial/Industrial/Land         (Lease has no Residential)
+    const usesFullForm =
+      (purpose === "sell" &&
+        (((category === "residential" || category === "commercial") &&
+          (listingType === "single" || listingType === "project")) ||
+          category === "industrial" ||
+          category === "land")) ||
+      (purpose === "rent" &&
+        (category === "residential" ||
+          category === "commercial" ||
+          category === "industrial")) ||
+      (purpose === "lease" &&
+        (category === "commercial" ||
+          category === "industrial" ||
+          category === "land")) ||
+      // PG / Co-living → Residential only.
+      (purpose === "pg" && category === "residential");
+
+    if (usesFullForm) {
+      return (
+        <PropertyForm
+          purpose={purpose}
+          category={category}
+          listingType={listingType ?? "single"}
+          onBack={() => setShowForm(false)}
+        />
+      );
+    }
+
+    // Other flows still use the scaffold (fields TBD).
     return (
       <PropertyFormScaffold
         flow={getFormFlow(purpose, listingType)}

@@ -12,6 +12,18 @@ try {
 }
 const supabaseWss = supabaseOrigin.replace(/^https:/, "wss:");
 
+// Cloudflare R2 public delivery domain (r2.dev or a custom domain).
+const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
+let r2Origin = "";
+let r2Host = "";
+try {
+  const u = new URL(r2PublicUrl);
+  r2Origin = u.origin;
+  r2Host = u.hostname;
+} catch {
+  r2Origin = "";
+}
+
 const connectSrc = [
   "'self'",
   supabaseOrigin,
@@ -21,6 +33,9 @@ const connectSrc = [
   // Razorpay checkout API + telemetry.
   "https://api.razorpay.com",
   "https://*.razorpay.com",
+  // R2: presigned PUT uploads go to the S3 endpoint; delivery from the public URL.
+  "https://*.r2.cloudflarestorage.com",
+  r2Origin,
   // Local HMR websocket + dev server in development only.
   isDev ? "ws: http://localhost:*" : "",
 ]
@@ -61,7 +76,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(), microphone=(), geolocation=(self), browsing-topics=()",
   },
   { key: "X-DNS-Prefetch-Control", value: "off" },
 ];
@@ -72,10 +87,10 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      // Cloudflare R2 public delivery.
+      { protocol: "https", hostname: "*.r2.dev" },
+      ...(r2Host ? [{ protocol: "https" as const, hostname: r2Host }] : []),
     ],
   },
 

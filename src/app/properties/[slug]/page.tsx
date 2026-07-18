@@ -38,6 +38,7 @@ import ContactForm from "@/components/properties/detail/ContactForm";
 import ShareButtons from "@/components/properties/detail/ShareButtons";
 import ReadMore from "@/components/properties/detail/ReadMore";
 import SimilarCarousel from "@/components/properties/detail/SimilarCarousel";
+import RecentlyViewedTracker from "@/components/properties/RecentlyViewedTracker";
 
 // Deterministic pseudo-live stats so each property shows stable, realistic numbers.
 function liveStats(id: number) {
@@ -166,6 +167,14 @@ export default async function PropertyDetailPage({
 
   return (
     <main className="min-h-screen bg-(--surface) pb-16">
+      <RecentlyViewedTracker
+        id={property.id}
+        slug={property.slug}
+        title={property.title}
+        image={galleryUrls[0] ?? null}
+        price={formatPriceRange(property.minPrice, property.maxPrice)}
+        location={location || null}
+      />
       <div className="mx-auto w-full max-w-[1600px] px-5 pt-6 sm:px-8 lg:px-10">
         {/* Breadcrumb — Properties > property name only */}
         <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted">

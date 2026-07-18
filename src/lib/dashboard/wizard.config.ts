@@ -94,7 +94,7 @@ export const CATEGORIES: WizardOption<Category>[] = [
 // Which categories are enabled for each purpose (the conditional-logic matrix).
 export const CATEGORY_MATRIX: Record<Purpose, Category[]> = {
   sell: ["residential", "commercial", "industrial", "land"],
-  rent: ["residential", "commercial"],
+  rent: ["residential", "commercial", "industrial"],
   lease: ["commercial", "industrial", "land"],
   pg: ["residential"],
 };

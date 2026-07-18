@@ -11,6 +11,8 @@
     "migrate:images": "tsx src/scripts/migrate-images.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1089.0",
+    "@aws-sdk/s3-request-presigner": "^3.1089.0",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.12.0",

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
+import { notifyUser } from "@/lib/notify";
 
 const RZP_KEY = process.env.RAZORPAY_KEY_ID;
 const RZP_SECRET = process.env.RAZORPAY_KEY_SECRET;
@@ -130,6 +131,12 @@ export async function verifyTopup(
 
   const rupees = Number(order.amount_paid ?? order.amount) / 100;
   const balance = await walletRepository.credit(id, rupees, "topup", paymentId);
+  await notifyUser(id, {
+    type: "topup",
+    title: "Wallet top-up successful",
+    body: `₹${rupees.toLocaleString("en-IN")} was added. New balance ₹${Math.round(balance).toLocaleString("en-IN")}.`,
+    link: "/leads-marketplace",
+  });
   revalidatePath("/leads-marketplace");
   return { ok: true, balance };
 }

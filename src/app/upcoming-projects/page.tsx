@@ -18,7 +18,7 @@ export default async function UpcomingProjectsPage({
   return (
     <PropertyListing
       heading="Upcoming Projects"
-      subheading="Explore newly launched and under-construction builder projects before anyone else."
+      // subheading="Explore newly launched and under-construction builder projects before anyone else."
       scope="upcoming"
       searchParams={sp}
     />

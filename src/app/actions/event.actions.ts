@@ -3,6 +3,9 @@
 import { headers } from "next/headers";
 import { eventService } from "@/lib/services/event.service";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { notificationRepository } from "@/lib/supabase/notification.repository";
+import { notifyAdmins } from "@/lib/notify";
 import {
   EventCard,
   EventFilter,
@@ -73,6 +76,47 @@ export async function registerForEvent(
       email,
       phone,
     });
+
+    // Notify the registrant (if they have an account) + admins. Best-effort.
+    try {
+      const db = createServiceRoleClient();
+      const { data: ev } = await db
+        .from("events")
+        .select("title, slug")
+        .eq("id", eventId)
+        .maybeSingle();
+      const evTitle = (ev?.title as string | null) ?? "the event";
+      const evLink = ev?.slug ? `/events/${ev.slug as string}` : "/events";
+
+      const { data: prof } = await db
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (prof?.id) {
+        await notificationRepository.createForMany([prof.id as string], {
+          type: "event",
+          title:
+            status === "waitlisted"
+              ? `You're on the waitlist for ${evTitle}`
+              : `You're registered for ${evTitle}`,
+          body:
+            status === "waitlisted"
+              ? "We'll notify you if a spot opens up."
+              : "See you there! Details are on the event page.",
+          link: evLink,
+        });
+      }
+      await notifyAdmins({
+        type: "event_registration",
+        title: "New event registration",
+        body: `${name} registered for "${evTitle}".`,
+        link: "/admin/dashboard",
+      });
+    } catch {
+      /* notification best-effort */
+    }
+
     return { success: true, status };
   } catch (err) {
     return {

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { leadApi } from "@/lib/api/lead.api";
 import { getMyListings } from "@/lib/actions/listing.action";
+import { getMyProfile } from "@/lib/actions/profile.action";
 import PropertyDashboard from "@/components/dashboard/PropertyDashboard";
 import { Lead } from "@/types/lead";
 
@@ -24,13 +25,17 @@ export default async function OwnerDashboardPage() {
     leads = await leadApi.getAgentLeads(profile.oldWpUserId);
   }
 
-  const listings = await getMyListings();
+  const [listings, editableProfile] = await Promise.all([
+    getMyListings(),
+    getMyProfile(),
+  ]);
 
   return (
     <PropertyDashboard
       listings={listings}
       leads={leads}
       fullName={profile.fullName}
+      profile={editableProfile}
     />
   );
 }

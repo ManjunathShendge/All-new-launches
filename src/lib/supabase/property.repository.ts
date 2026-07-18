@@ -8,6 +8,12 @@ import { imageRepository } from "./image.repository";
 import { mapPropertyCard } from "../mappers/property.mapper";
 import { PropertyCard } from "@/types/property-card";
 
+// Listings under review or rejected must never surface on the public site.
+// Exclusion (not IN) rather than a whitelist so the existing imported catalog
+// — whatever its historical status values — stays visible; only the two new
+// review states are hidden.
+const HIDDEN_PUBLIC_STATUSES = "(pending,rejected)";
+
 export class PropertyRepository {
   private async withImages(rows: any[]): Promise<PropertyCard[]> {
     if (rows.length === 0) return [];
@@ -50,6 +56,7 @@ export class PropertyRepository {
     const { data, error } = await supabase
       .from("properties")
       .select(PROPERTY_CARD_FIELDS)
+      .not("status", "in", HIDDEN_PUBLIC_STATUSES)
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -65,6 +72,7 @@ export class PropertyRepository {
       .from("properties")
       .select(PROPERTY_CARD_FIELDS)
       .eq("is_featured", true)
+      .not("status", "in", HIDDEN_PUBLIC_STATUSES)
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -84,6 +92,7 @@ export class PropertyRepository {
     let query = supabase
       .from("properties")
       .select(PROPERTY_CARD_FIELDS)
+      .not("status", "in", HIDDEN_PUBLIC_STATUSES)
       .neq("id", propertyId);
 
     if (propertyType) {
@@ -108,7 +117,8 @@ export class PropertyRepository {
       .from("properties")
       .select(PROPERTY_CARD_FIELDS, {
         count: "exact",
-      });
+      })
+      .not("status", "in", HIDDEN_PUBLIC_STATUSES);
 
     // City/locality casing is inconsistent in the data — match partially.
     if (filter?.city)

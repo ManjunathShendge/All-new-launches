@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import ProfileDropdown from "./ProfileDropdown";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import {
   getDashboardRoute,
   getDashboardLabel,
@@ -233,9 +234,19 @@ export default function Navbar() {
                 </Link> */}
               </>
             ) : (
-              <ProfileDropdown />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <ProfileDropdown />
+              </div>
             )}
           </div>
+
+          {/* Mobile: notification bell (when signed in) beside the hamburger */}
+          {user && (
+            <div className="md:hidden">
+              <NotificationBell />
+            </div>
+          )}
 
           {/* Mobile Menu Toggle (CSS Animated Hamburger) */}
           <button

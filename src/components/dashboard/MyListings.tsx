@@ -22,6 +22,30 @@ function titleCase(value: string | null): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Review state shown to the lister. New listings start "pending" until an admin
+// approves or disapproves them.
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+  approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  rejected: { label: "Disapproved", className: "bg-red-50 text-red-700 ring-red-600/20" },
+  disapproved: { label: "Disapproved", className: "bg-red-50 text-red-700 ring-red-600/20" },
+};
+
+function StatusBadge({ status }: { status: string | null }) {
+  const key = (status ?? "").toLowerCase();
+  const s =
+    STATUS_STYLES[key] ??
+    // Older / imported listings that predate the review flow read as live.
+    { label: titleCase(status) === "—" ? "Approved" : titleCase(status), className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" };
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${s.className}`}
+    >
+      {s.label}
+    </span>
+  );
+}
+
 export default function MyListings({
   listings,
   onAddNew,
@@ -71,6 +95,7 @@ export default function MyListings({
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Listing</th>
+                <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Date Added</th>
                 <th className="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
@@ -92,6 +117,9 @@ export default function MyListings({
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {titleCase(l.transactionType)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={l.status} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">
                     {formatDate(l.createdAt)}

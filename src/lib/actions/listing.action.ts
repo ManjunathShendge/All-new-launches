@@ -11,6 +11,7 @@ export interface MyListing {
   propertyType: string | null;
   propertyCategory: string | null;
   transactionType: string | null;
+  status: string | null;
   createdAt: string | null;
 }
 
@@ -36,7 +37,7 @@ export async function getMyListings(): Promise<MyListing[]> {
   const { data, error } = await db
     .from("properties")
     .select(
-      "id, slug, title, property_type, property_category, transaction_type, created_at"
+      "id, slug, title, property_type, property_category, transaction_type, status, created_at"
     )
     .eq("user_id", profile.oldWpUserId)
     .order("created_at", { ascending: false });
@@ -50,6 +51,7 @@ export async function getMyListings(): Promise<MyListing[]> {
     propertyType: (r.property_type as string | null) ?? null,
     propertyCategory: (r.property_category as string | null) ?? null,
     transactionType: (r.transaction_type as string | null) ?? null,
+    status: (r.status as string | null) ?? null,
     createdAt: (r.created_at as string | null) ?? null,
   }));
 }

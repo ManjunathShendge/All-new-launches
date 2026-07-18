@@ -1,5 +1,6 @@
 import { propertyApi } from "@/lib/api/property.api";
 import { PropertyFilter } from "@/types/property-filter";
+import { getSavedPropertyIds } from "@/lib/actions/user-activity.action";
 import PropertyCard from "@/components/properties/PropertyCard";
 import FilterSidebar from "@/components/properties/FilterSidebar";
 import SortSelect from "@/components/properties/SortSelect";
@@ -33,7 +34,7 @@ export default async function PropertyListing({
   searchParams,
 }: {
   heading: string;
-  subheading: string;
+  subheading?: string;
   scope?: string;
   searchParams: SearchParams;
 }) {
@@ -56,6 +57,9 @@ export default async function PropertyListing({
 
   const { data, count } = await propertyApi.getPropertyListing(filter);
 
+  // Saved-state for the signed-in user (empty for guests) so cards show hearts.
+  const savedIds = new Set(await getSavedPropertyIds());
+
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
   const from = count === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, count);
@@ -67,7 +71,7 @@ export default async function PropertyListing({
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {heading}
           </h1>
-          <p className="mt-2 text-muted">{subheading}</p>
+          {subheading && <p className="mt-2 text-muted">{subheading}</p>}
         </header>
 
         <div className="flex flex-col gap-8 lg:flex-row">
@@ -108,7 +112,11 @@ export default async function PropertyListing({
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {data.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    saved={savedIds.has(property.id)}
+                  />
                 ))}
               </div>
             )}

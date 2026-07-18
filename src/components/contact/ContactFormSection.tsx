@@ -8,9 +8,9 @@ import Link from "next/link";
 
 export default function ContactLayout() {
   const bentoItems = [
-    { icon: MapPin, title: "Headquarters", desc: "Cyber Hub, Gurugram", href: "#map", isLink: true },
+    { icon: MapPin, title: "Headquarters", desc: "ILD Trade Center, Sector 47, Gurugram – 122018", href: "#map", isLink: true },
     { icon: Mail, title: "Email Us", desc: "sales@allnewlaunches.com", href: "mailto:sales@allnewlaunches.com", isLink: true },
-    { icon: Phone, title: "Call Us", desc: "+91 98765 43210", href: "tel:+919876543210", isLink: true },
+    { icon: Phone, title: "Call Us", desc: "+91 91184 04041", href: "tel:+919118404041", isLink: true },
     { icon: Clock, title: "Working Hours", desc: "Mon - Sat: 10AM - 7PM", href: "#", isLink: false },
   ];
 
@@ -98,12 +98,12 @@ export default function ContactLayout() {
               className="flex justify-center gap-6"
             >
               {[
-                { icon: FaInstagram, label: "Instagram" },
-                { icon: FaLinkedinIn, label: "LinkedIn" },
-                { icon: FaXTwitter, label: "Twitter" },
-                { icon: FaFacebookF, label: "Facebook" }
+                { icon: FaInstagram, label: "Instagram", href: "https://www.instagram.com/allnewlaunches/" },
+                { icon: FaLinkedinIn, label: "LinkedIn", href: "https://www.linkedin.com/in/allnew-launches-8474b73aa/" },
+                { icon: FaXTwitter, label: "Twitter", href: "https://x.com/allnewlaunches" },
+                { icon: FaFacebookF, label: "Facebook", href: "https://www.facebook.com/profile.php?id=61587237071959" }
               ].map((item, i) => (
-                <Link href="#" key={i} aria-label={item.label} className="group flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-slate-200 text-slate-500 transition-all hover:border-blue-500 hover:text-blue-600 hover:shadow-lg">
+                <Link href={item.href} target="_blank" rel="noopener noreferrer" key={i} aria-label={item.label} className="group flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-slate-200 text-slate-500 transition-all hover:border-blue-500 hover:text-blue-600 hover:shadow-lg">
                   <item.icon size={30} />
                 </Link>
               ))}
@@ -169,8 +169,8 @@ export default function ContactLayout() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="group relative h-100 w-full overflow-hidden rounded-[2.5rem] border border-slate-200 bg-slate-200 shadow-xl shadow-slate-200/50"
         >
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d112173.30872658825!2d76.953179!3d28.4228859!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d19d582e38859%3A0x2cf5fe8e5c64b1e!2sGurugram%2C%20Haryana!5e0!3m2!1sen!2sin!4v1711100000000!5m2!1sen!2sin" 
+          <iframe
+            src="https://www.google.com/maps?q=ILD%20Trade%20Center%2C%20Sector%2047%2C%20Gurugram%2C%20122018&output=embed"
             width="100%" 
             height="100%" 
             style={{ border: 0 }} 
@@ -187,7 +187,7 @@ export default function ContactLayout() {
               </div>
               <div>
                 <p className="font-bold text-slate-900">Headquarters</p>
-                <p className="text-xs text-slate-500">Cyber Hub, Gurugram</p>
+                <p className="text-xs text-slate-500">ILD Trade Center, Sector 47, Gurugram</p>
               </div>
             </div>
           </div>

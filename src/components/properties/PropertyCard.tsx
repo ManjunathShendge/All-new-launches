@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MapPin, Maximize, CalendarClock, ShieldCheck } from "lucide-react";
 import { PropertyCard as PropertyCardType } from "@/types/property-card";
+import SaveButton from "./SaveButton";
 import {
   formatPriceRange,
   formatAreaRange,
@@ -37,7 +38,14 @@ function InfoCell({
   );
 }
 
-export default function PropertyCard({ property }: { property: PropertyCardType }) {
+export default function PropertyCard({
+  property,
+  saved,
+}: {
+  property: PropertyCardType;
+  /** When provided, renders a save heart hydrated to this state. */
+  saved?: boolean;
+}) {
   const location = [property.locality, property.city]
     .filter(Boolean)
     .join(", ");
@@ -62,9 +70,16 @@ export default function PropertyCard({ property }: { property: PropertyCardType 
           {titleCase(property.transactionType) || "Sell"}
         </span>
 
+        {/* Save heart (only when saved-state is known) */}
+        {saved !== undefined && (
+          <div className="absolute right-3 top-3">
+            <SaveButton propertyId={property.id} initialSaved={saved} />
+          </div>
+        )}
+
         {/* Property type badge */}
         {property.propertyType && (
-          <span className="absolute right-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-foreground shadow">
+          <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-foreground shadow">
             {titleCase(property.propertyType)}
           </span>
         )}

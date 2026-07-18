@@ -1,12 +1,35 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
+  AdminBuyerRollup,
+  AdminPurchaseRow,
+  BulkPurchaseResult,
   ListableLead,
   MarketFilter,
   MarketLeadCard,
+  MarketplaceInsights,
   PurchaseResult,
   PurchaseStatus,
   PurchasedLead,
 } from "@/types/marketplace";
+
+// Upper bound of leads returned to the browser for one filtered view. Big
+// enough to select-all a large batch, small enough to stay a light payload.
+const BROWSE_CAP = 2000;
+
+/**
+ * Mask a lead's name for the pre-purchase marketplace: first name + surname
+ * initial (e.g. "Rahul Sharma" -> "Rahul S."). The full surname is NEVER sent
+ * to the browser for an unowned lead. The real name is revealed post-purchase.
+ */
+function maskName(name: string | null): string | null {
+  const clean = (name ?? "").trim();
+  if (!clean || clean.includes("@")) return clean ? "Lead" : null;
+  const parts = clean.split(/\s+/);
+  const first = parts[0];
+  if (parts.length === 1) return first;
+  const surnameInitial = parts[parts.length - 1][0]?.toUpperCase();
+  return surnameInitial ? `${first} ${surnameInitial}.` : first;
+}
 
 interface PropMeta {
   title: string | null;
@@ -52,18 +75,22 @@ export class MarketplaceRepository {
       .from("marketplace_listings")
       .select("id, price, lead_id")
       .eq("active", true)
-      .limit(500);
+      .limit(BROWSE_CAP);
     if (!listings || listings.length === 0) return [];
 
     const leadIds = listings.map((l) => l.lead_id as number);
     const { data: leadCtx } = await db
       .from("leads")
-      .select("id, property_id, lead_source, created_at")
+      .select("id, name, property_id, lead_source, created_at")
       .in("id", leadIds);
 
-    const ctxMap = new Map<number, { propertyId: number | null; source: string | null; postedAt: string | null }>();
+    const ctxMap = new Map<
+      number,
+      { name: string | null; propertyId: number | null; source: string | null; postedAt: string | null }
+    >();
     for (const l of leadCtx ?? []) {
       ctxMap.set(l.id as number, {
+        name: (l.name as string | null) ?? null,
         propertyId: (l.property_id as number | null) ?? null,
         source: (l.lead_source as string | null) ?? null,
         postedAt: (l.created_at as string | null) ?? null,
@@ -92,6 +119,7 @@ export class MarketplaceRepository {
         listingId: l.id as number,
         leadId,
         price: Number(l.price),
+        name: maskName(ctx?.name ?? null),
         propertyId: ctx?.propertyId ?? null,
         propertyTitle: m?.title ?? null,
         propertySlug: m?.slug ?? null,
@@ -156,6 +184,52 @@ export class MarketplaceRepository {
       invoiceNo: r.invoice_no,
       balance: r.balance != null ? Number(r.balance) : undefined,
     };
+  }
+
+  /** Atomic BULK purchase (buy many at once) via the SECURITY DEFINER function. */
+  async purchaseMany(
+    buyerId: string,
+    listingIds: number[]
+  ): Promise<BulkPurchaseResult> {
+    if (listingIds.length === 0)
+      return { ok: false, error: "No leads selected." };
+    const db = createServiceRoleClient();
+    const { data, error } = await db.rpc("purchase_leads", {
+      p_buyer: buyerId,
+      p_listings: listingIds,
+    });
+    if (error) return { ok: false, error: error.message };
+    const r = (data ?? {}) as {
+      ok: boolean;
+      error?: string;
+      bought?: number;
+      spent?: number;
+      balance?: number;
+      needed?: number;
+      count?: number;
+    };
+    return {
+      ok: r.ok,
+      error: r.error,
+      bought: r.bought,
+      spent: r.spent != null ? Number(r.spent) : undefined,
+      balance: r.balance != null ? Number(r.balance) : undefined,
+      needed: r.needed != null ? Number(r.needed) : undefined,
+      count: r.count,
+    };
+  }
+
+  /**
+   * Every active listing id the buyer can still buy under a filter — used by
+   * the "buy all matching" flow so the client doesn't have to ship thousands of
+   * ids. Reuses browse() (already PII-free + filtered), keeping one code path.
+   */
+  async availableListingIds(
+    buyerId: string,
+    filter: MarketFilter
+  ): Promise<number[]> {
+    const cards = await this.browse(buyerId, filter);
+    return cards.filter((c) => !c.owned).map((c) => c.listingId);
   }
 
   async getPurchasedLeads(buyerId: string): Promise<PurchasedLead[]> {
@@ -377,6 +451,65 @@ export class MarketplaceRepository {
     if (error) throw new Error(error.message);
   }
 
+  /**
+   * List every captured lead that isn't already listed, at a single price, so
+   * the whole inventory is available in the marketplace in one action. Existing
+   * listings (with their own prices) are left untouched. Returns how many were
+   * newly listed.
+   */
+  async listAllLeads(price: number, adminId: string): Promise<number> {
+    const db = createServiceRoleClient();
+    const [{ data: leads }, { data: listed }] = await Promise.all([
+      db.from("leads").select("id"),
+      db.from("marketplace_listings").select("lead_id"),
+    ]);
+    const already = new Set((listed ?? []).map((l) => l.lead_id as number));
+    const rows = (leads ?? [])
+      .map((l) => l.id as number)
+      .filter((id) => !already.has(id))
+      .map((lead_id) => ({
+        lead_id,
+        price,
+        active: true,
+        created_by: adminId,
+        updated_at: new Date().toISOString(),
+      }));
+    if (rows.length === 0) return 0;
+    // Insert in chunks to stay comfortably within request limits at scale.
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await db
+        .from("marketplace_listings")
+        .insert(rows.slice(i, i + 500));
+      if (error) throw new Error(error.message);
+    }
+    return rows.length;
+  }
+
+  /**
+   * Set ONE price across every lead — overwrites all existing listing prices
+   * and lists any not-yet-listed lead. Returns how many leads were affected.
+   */
+  async setPriceForAll(price: number, adminId: string): Promise<number> {
+    const db = createServiceRoleClient();
+    const { data: leads } = await db.from("leads").select("id");
+    const now = new Date().toISOString();
+    const rows = (leads ?? []).map((l) => ({
+      lead_id: l.id as number,
+      price,
+      active: true,
+      created_by: adminId,
+      updated_at: now,
+    }));
+    if (rows.length === 0) return 0;
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await db
+        .from("marketplace_listings")
+        .upsert(rows.slice(i, i + 500), { onConflict: "lead_id" });
+      if (error) throw new Error(error.message);
+    }
+    return rows.length;
+  }
+
   async unlist(leadId: number): Promise<void> {
     const db = createServiceRoleClient();
     const { error } = await db
@@ -384,6 +517,95 @@ export class MarketplaceRepository {
       .update({ active: false, updated_at: new Date().toISOString() })
       .eq("lead_id", leadId);
     if (error) throw new Error(error.message);
+  }
+
+  /**
+   * Admin "Marketplace Leads" insights: aggregate KPIs + top buyers (computed
+   * in SQL so it scales), plus a page of recent purchases with buyer + lead
+   * context for the table.
+   */
+  async getInsights(recentLimit = 100): Promise<MarketplaceInsights> {
+    const db = createServiceRoleClient();
+
+    // Aggregates + top buyers — done set-based in Postgres (scalable).
+    const { data: agg } = await db.rpc("marketplace_insights");
+    const a = (agg ?? {}) as {
+      total_revenue?: number;
+      leads_sold?: number;
+      unique_buyers?: number;
+      active_listings?: number;
+      buyers?: Record<string, unknown>[];
+    };
+    const buyers: AdminBuyerRollup[] = (a.buyers ?? []).map((b) => ({
+      buyerId: (b.buyer_id as string) ?? "",
+      buyerName: (b.name as string | null) ?? "Unknown",
+      buyerEmail: (b.email as string | null) ?? "",
+      leadsBought: Number(b.leads_bought ?? 0),
+      totalSpent: Number(b.total_spent ?? 0),
+      lastPurchaseAt: (b.last_at as string | null) ?? null,
+    }));
+
+    // Recent purchases (bounded) + context.
+    const { data: purchases } = await db
+      .from("lead_purchases")
+      .select("id, buyer_id, lead_id, invoice_no, price, status, purchased_at")
+      .order("purchased_at", { ascending: false })
+      .limit(recentLimit);
+
+    const rows: AdminPurchaseRow[] = [];
+    if (purchases && purchases.length > 0) {
+      const buyerIds = [...new Set(purchases.map((p) => p.buyer_id as string))];
+      const leadIds = [...new Set(purchases.map((p) => p.lead_id as number))];
+
+      const [{ data: profiles }, { data: leads }] = await Promise.all([
+        db.from("profiles").select("id, full_name, email, account_type").in("id", buyerIds),
+        db.from("leads").select("id, name, property_id, lead_source").in("id", leadIds),
+      ]);
+
+      const profileMap = new Map<string, Record<string, unknown>>();
+      for (const p of profiles ?? []) profileMap.set(p.id as string, p);
+      const leadMap = new Map<number, Record<string, unknown>>();
+      for (const l of leads ?? []) leadMap.set(l.id as number, l);
+
+      const meta = await this.propertyMeta([
+        ...new Set(
+          (leads ?? [])
+            .map((l) => l.property_id as number | null)
+            .filter((v): v is number => v != null)
+        ),
+      ]);
+
+      for (const p of purchases) {
+        const prof = profileMap.get(p.buyer_id as string);
+        const lead = leadMap.get(p.lead_id as number);
+        const propId = (lead?.property_id as number | null) ?? null;
+        const m = propId != null ? meta.get(propId) : undefined;
+        rows.push({
+          purchaseId: p.id as number,
+          invoiceNo: (p.invoice_no as string | null) ?? null,
+          buyerName: (prof?.full_name as string | null) ?? "Unknown",
+          buyerEmail: (prof?.email as string | null) ?? "",
+          buyerType: (prof?.account_type as string | null) ?? "user",
+          leadName: (lead?.name as string | null) ?? null,
+          propertyTitle: m?.title ?? null,
+          city: m?.city ?? null,
+          locality: m?.locality ?? null,
+          source: (lead?.lead_source as string | null) ?? null,
+          price: Number(p.price),
+          status: (p.status as PurchaseStatus) ?? "new",
+          purchasedAt: (p.purchased_at as string | null) ?? null,
+        });
+      }
+    }
+
+    return {
+      totalRevenue: Number(a.total_revenue ?? 0),
+      leadsSold: Number(a.leads_sold ?? 0),
+      uniqueBuyers: Number(a.unique_buyers ?? 0),
+      activeListings: Number(a.active_listings ?? 0),
+      buyers,
+      recent: rows,
+    };
   }
 }
 

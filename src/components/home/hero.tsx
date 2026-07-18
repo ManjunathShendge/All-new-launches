@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, PlayCircle, X } from "lucide-react";
+import HeroShowcase from "./HeroShowcase";
+import type { ShowcaseCard } from "@/types/premium-showcase";
 
 const VIDEOS = [
   "https://res.cloudinary.com/dvenligyn/video/upload/v1783548589/hero1_yokvmh.mp4",
@@ -18,7 +20,12 @@ const FADE_DURATION = 1.6;
 // Showcase video for the popup modal
 const POPUP_VIDEO_URL = VIDEOS[0]; 
 
-export default function HeroSection() {
+export default function HeroSection({
+  showcase = [],
+}: {
+  showcase?: ShowcaseCard[];
+}) {
+  const hasShowcase = showcase.length > 0;
   const [activeIndex, setActiveIndex] = useState(0);
   const [showFirst, setShowFirst] = useState(true); // which <video> element is "on top"
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -97,6 +104,32 @@ export default function HeroSection() {
     };
   }, [isVideoModalOpen]);
 
+  // Reused in both layouts (under the text on desktop, below the cards on mobile).
+  const ctaButtons = (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8 }}
+      className="flex flex-wrap gap-5"
+    >
+      <Link
+        href="/properties"
+        className="group flex items-center gap-3 rounded-full bg-[#0051D5] px-7 py-4 font-medium transition-all duration-300 hover:scale-105 hover:bg-blue-700"
+      >
+        Explore Properties
+        <ArrowRight size={18} className="transition group-hover:translate-x-1" />
+      </Link>
+
+      <button
+        onClick={() => setIsVideoModalOpen(true)}
+        className="group flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 py-4 backdrop-blur-xl transition-all duration-300 hover:bg-white/20"
+      >
+        <PlayCircle size={18} />
+        Watch Video
+      </button>
+    </motion.div>
+  );
+
   return (
     <section className="relative min-h-screen overflow-hidden bg-black text-white">
       {/* ---------------- Video Background ---------------- */}
@@ -140,8 +173,18 @@ export default function HeroSection() {
       />
 
       {/* ---------------- Content ---------------- */}
-      <div className="relative z-30 mx-auto flex min-h-screen max-w-7xl items-center px-6 lg:px-10">
-        <div className="max-w-4xl">
+      <div className="relative z-30 mx-auto flex min-h-screen max-w-7xl items-center px-6 py-28 lg:px-10 lg:py-0">
+        <div
+          className={`grid w-full items-center ${
+            hasShowcase ? "gap-x-10 gap-y-8 lg:grid-cols-2" : "grid-cols-1 gap-12"
+          }`}
+        >
+        {/* Text — chip + heading + description */}
+        <div
+          className={
+            hasShowcase ? "max-w-2xl lg:col-start-1 lg:row-start-1" : "max-w-4xl"
+          }
+        >
           {/* Chip */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -159,7 +202,9 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-5xl font-bold leading-[0.92] tracking-tighter sm:text-6xl lg:text-[5.5rem] mb-5"
+            className={`text-5xl font-bold leading-[0.92] tracking-tighter sm:text-6xl mb-5 ${
+              hasShowcase ? "lg:text-7xl" : "lg:text-[5.5rem]"
+            }`}
           >
             <span className="text-white">Discover Your </span>
             <br />
@@ -173,39 +218,37 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="max-w-2xl text-lg leading-8 text-white/80 sm:text-xl mb-10"
+            className={`max-w-2xl text-lg leading-8 text-white/80 sm:text-xl ${
+              hasShowcase ? "mb-0" : "mb-10"
+            }`}
           >
             Browse over 50,000 verified homes across India. Discover premium
             apartments, luxury villas, gated communities and investment
             opportunities, all in one seamless experience.
           </motion.h4>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-wrap gap-5"
-          >
-            <Link
-              href="/properties"
-              className="group flex items-center gap-3 rounded-full bg-[#0051D5] px-7 py-4 font-medium transition-all duration-300 hover:scale-105 hover:bg-blue-700"
-            >
-              Explore Properties
-              <ArrowRight
-                size={18}
-                className="transition group-hover:translate-x-1"
-              />
-            </Link>
+          {/* CTAs stay under the text when there's no showcase column */}
+          {!hasShowcase && <div className="mt-10">{ctaButtons}</div>}
+        </div>
 
-            <button
-              onClick={() => setIsVideoModalOpen(true)}
-              className="group flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-7 py-4 backdrop-blur-xl transition-all duration-300 hover:bg-white/20"
-            >
-              <PlayCircle size={18} />
-              Watch Video
-            </button>
+        {/* Premium Properties Showcase — right column on desktop, middle on mobile */}
+        {hasShowcase && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.7, ease: "easeOut" }}
+            className="flex justify-center lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:justify-end lg:self-center"
+          >
+            <HeroShowcase items={showcase} />
           </motion.div>
+        )}
+
+        {/* CTAs — below the cards on mobile, under the text on desktop */}
+        {hasShowcase && (
+          <div className="max-w-2xl lg:col-start-1 lg:row-start-2">
+            {ctaButtons}
+          </div>
+        )}
         </div>
       </div>
 

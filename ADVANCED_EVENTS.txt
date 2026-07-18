@@ -8,3 +8,24 @@ WhatsApp notify             | RSVP flow (after registerForEvent)
 Waitlist notify             | Registrations / capacity (spot-opened)
 Similar events              | Event Detail page (by category / locality)
 Social share                | Event Card + Event Detail page (WhatsApp, copy link)
+
+Pending work 
+
+1. Env vars (.env.local):
+
+CLOUDFLARE_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET=property-media
+NEXT_PUBLIC_R2_PUBLIC_URL=https://pub-xxxx.r2.dev   # or your custom domain
+2. Bucket CORS (R2 → your bucket → Settings → CORS) — required for the browser to PUT directly:
+
+
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://YOUR_PROD_DOMAIN"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["content-type"],
+    "MaxAgeSeconds": 3600
+  }
+]
