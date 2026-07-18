@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, MessageSquare, HelpCircle } from "lucide-react";
 
 // Mock data based on the screenshot
@@ -122,9 +123,12 @@ export default function FAQSection() {
             <p className="mb-6 font-['Inter'] text-[14px] leading-normal text-[#45464d]">
               Our support team is here to help you with any inquiries.
             </p>
-            <button className="rounded-lg bg-[#0051d5] px-6 py-3 font-['Inter'] text-[16px] font-semibold text-white transition-all hover:bg-[#003ea8] hover:shadow-[0_4px_14px_rgba(0,81,213,0.39)]">
+            <Link
+              href="/contact"
+              className="inline-block rounded-lg bg-[#0051d5] px-6 py-3 font-['Inter'] text-[16px] font-semibold text-white transition-all hover:bg-[#003ea8] hover:shadow-[0_4px_14px_rgba(0,81,213,0.39)]"
+            >
               Contact Support
-            </button>
+            </Link>
           </div>
 
         </div>

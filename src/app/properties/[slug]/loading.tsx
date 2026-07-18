@@ -13,7 +13,7 @@ export default function Loading() {
           <div className="min-w-0 flex-1">
             {/* Gallery */}
             <div className="grid grid-cols-4 gap-3">
-              <div className="col-span-4 h-96 rounded-card bg-slate-200 sm:h-[28rem]" />
+              <div className="col-span-4 h-96 rounded-card bg-slate-200 sm:h-112" />
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-24 rounded-lg bg-slate-200" />
               ))}

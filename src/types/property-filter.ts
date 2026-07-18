@@ -1,4 +1,7 @@
 export interface PropertyFilter {
+  /** Free-text search across title, locality and city. */
+  search?: string;
+
   city?: string;
 
   locality?: string;

@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Store,
   Crown,
+  Mail,
   PanelLeftClose,
   PanelLeft,
   type LucideIcon,
@@ -17,6 +18,7 @@ import AdminProperties from "./AdminProperties";
 import AdminEvents from "./AdminEvents";
 import AdminMarketplace from "./AdminMarketplace";
 import AdminPremiumShowcase from "./AdminPremiumShowcase";
+import AdminEnquiries from "./AdminEnquiries";
 import AdminInsights, { type PropertyStats } from "./AdminInsights";
 import type { Lead } from "@/types/lead";
 import type { AssignableAgent } from "@/lib/supabase/lead.repository";
@@ -28,6 +30,7 @@ type SectionId =
   | "showcase"
   | "events"
   | "marketplace"
+  | "enquiries"
   | "insights";
 
 const NAV: { id: SectionId; label: string; icon: LucideIcon }[] = [
@@ -36,6 +39,7 @@ const NAV: { id: SectionId; label: string; icon: LucideIcon }[] = [
   { id: "showcase", label: "Premium Showcase", icon: Crown },
   { id: "events", label: "Events", icon: CalendarDays },
   { id: "marketplace", label: "Marketplace Leads", icon: Store },
+  { id: "enquiries", label: "Enquiries", icon: Mail },
   { id: "insights", label: "Insights", icon: BarChart3 },
 ];
 
@@ -176,6 +180,7 @@ export default function AdminShell({
         {active === "showcase" && <AdminPremiumShowcase />}
         {active === "events" && <AdminEvents />}
         {active === "marketplace" && <AdminMarketplace />}
+        {active === "enquiries" && <AdminEnquiries />}
         {active === "insights" && (
           <AdminInsights
             leads={leads}

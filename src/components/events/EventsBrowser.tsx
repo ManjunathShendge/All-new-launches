@@ -99,21 +99,25 @@ export default function EventsBrowser() {
     "rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400";
 
   return (
-    <div className="flex gap-6">
-      {/* ---- Collapsible sidebar (desktop) ---- */}
+    <div className="flex flex-col gap-6 lg:flex-row">
+      {/* ---- Collapsible sidebar rail (desktop) — like the admin dashboard.
+             The toggle sits at the top of the rail, above the view icons, and
+             is completely separate from the category tabs above the cards. ---- */}
       <aside
-        className={`sticky top-18 hidden h-[calc(100vh-4.5rem)] shrink-0 lg:block ${
+        className={`sticky top-18 hidden h-[calc(100vh-4.5rem)] shrink-0 transition-[width] duration-300 ease-in-out lg:block ${
           collapsed ? "w-16" : "w-52"
-        } transition-[width] duration-200`}
+        }`}
       >
         <div className="flex h-full flex-col py-2">
+          {/* Toggle — above the icons */}
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className={`mb-2 flex items-center rounded-lg p-2.5 text-slate-500 hover:bg-slate-100 ${
+            className={`mb-2 flex items-center rounded-lg p-2.5 text-slate-500 transition-colors hover:bg-slate-100 ${
               collapsed ? "justify-center" : ""
             }`}
-            aria-label={collapsed ? "Expand" : "Collapse"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand" : "Collapse"}
           >
             {collapsed ? (
               <PanelLeft className="h-5 w-5" />
@@ -150,7 +154,7 @@ export default function EventsBrowser() {
       </aside>
 
       {/* ---- Content ---- */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 w-full flex-1 overflow-x-clip">
         {/* Mobile view chips */}
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">
           {VIEWS.map((v) => (

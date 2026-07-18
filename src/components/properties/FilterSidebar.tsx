@@ -13,16 +13,19 @@ const TRANSACTION_TYPES = [
 
 const CATEGORIES = [
   { value: "", label: "Any" },
-  { value: "new_project", label: "New Project" },
-  { value: "resale", label: "Resale" },
+  { value: "residential", label: "Residential" },
+  { value: "commercial", label: "Commercial" },
+  { value: "land", label: "Land / Plot" },
 ];
 
 const PROPERTY_TYPES = [
   { value: "", label: "Any" },
-  { value: "apartment", label: "Apartment" },
-  { value: "villa", label: "Villa" },
-  { value: "plot", label: "Plot" },
-  { value: "commercial", label: "Commercial" },
+  { value: "apartment", label: "Apartment / Flat" },
+  { value: "villa", label: "House / Villa" },
+  { value: "plot", label: "Plot / Land" },
+  { value: "office", label: "Office" },
+  { value: "shop", label: "Shop / Showroom" },
+  { value: "warehouse", label: "Warehouse" },
 ];
 
 const CONFIGURATIONS = [
@@ -107,20 +110,26 @@ export default function FilterSidebar() {
       const value = fields[key].trim();
       if (value) params.set(key, value);
     });
-    // Reset to page 1, keep any active sort.
+    // Reset to page 1, keep any active sort + search term.
     const sort = searchParams.get("sort");
     if (sort) params.set("sort", sort);
+    const search = searchParams.get("search");
+    if (search) params.set("search", search);
     router.push(`${pathname}?${params.toString()}`);
     setOpen(false);
   };
 
   const reset = () => {
     setFields(EMPTY);
-    router.push(pathname);
+    // Clearing filters keeps the active search term (that's a separate control).
+    const search = searchParams.get("search");
+    router.push(
+      search ? `${pathname}?search=${encodeURIComponent(search)}` : pathname
+    );
     setOpen(false);
   };
 
-  const body = (
+  const filterFields = (
     <div className="flex flex-col gap-5">
       <Field label="Transaction Type">
         <Select
@@ -223,23 +232,25 @@ export default function FilterSidebar() {
           />
         </div>
       </Field>
+    </div>
+  );
 
-      <div className="mt-2 flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={apply}
-          className="w-full rounded-full bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8]"
-        >
-          Apply Filters
-        </button>
-        <button
-          type="button"
-          onClick={reset}
-          className="w-full rounded-full border border-(--border) px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-(--surface)"
-        >
-          Reset Filters
-        </button>
-      </div>
+  const actions = (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={apply}
+        className="w-full rounded-full bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8]"
+      >
+        Apply Filters
+      </button>
+      <button
+        type="button"
+        onClick={reset}
+        className="w-full rounded-full border border-(--border) px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-(--surface)"
+      >
+        Reset Filters
+      </button>
     </div>
   );
 
@@ -255,14 +266,19 @@ export default function FilterSidebar() {
         Filters
       </button>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — capped height, scrollable fields, pinned actions */}
       <aside className="hidden w-72 shrink-0 lg:block">
-        <div className="sticky top-24 rounded-card border border-(--border) bg-(--surface-container-lowest) p-6 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-          <h2 className="mb-5 flex items-center gap-2 text-base font-semibold text-foreground">
+        <div className="sticky top-24 flex max-h-[60vh] flex-col overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+          <h2 className="flex shrink-0 items-center gap-2 border-b border-(--border) px-6 py-4 text-base font-semibold text-foreground">
             <SlidersHorizontal size={18} />
             Filters
           </h2>
-          {body}
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            {filterFields}
+          </div>
+          <div className="shrink-0 border-t border-(--border) px-6 py-4">
+            {actions}
+          </div>
         </div>
       </aside>
 
@@ -273,8 +289,8 @@ export default function FilterSidebar() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-[85%] max-w-sm overflow-y-auto bg-(--surface-container-lowest) p-6 shadow-xl">
-            <div className="mb-5 flex items-center justify-between">
+          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-(--surface-container-lowest) shadow-xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-(--border) px-6 py-4">
               <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
                 <SlidersHorizontal size={18} />
                 Filters
@@ -283,7 +299,12 @@ export default function FilterSidebar() {
                 <X size={20} className="text-muted" />
               </button>
             </div>
-            {body}
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              {filterFields}
+            </div>
+            <div className="shrink-0 border-t border-(--border) px-6 py-4">
+              {actions}
+            </div>
           </div>
         </div>
       )}

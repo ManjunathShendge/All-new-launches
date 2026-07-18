@@ -1,12 +1,69 @@
 
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
-import { MapPin, Mail, Phone, Clock, ArrowRight, ExternalLink } from "lucide-react";
+import {
+  MapPin,
+  Mail,
+  Phone,
+  Clock,
+  ArrowRight,
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { FaInstagram, FaLinkedinIn, FaXTwitter, FaFacebookF } from "react-icons/fa6";
 import Link from "next/link";
+import { submitEnquiry } from "@/lib/actions/enquiry.action";
+import { usePrefillContact } from "@/lib/hooks/usePrefillContact";
 
 export default function ContactLayout() {
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (k: keyof typeof form, v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  // Prefill for signed-in users (name -> first/last, email, phone).
+  usePrefillContact((me) =>
+    setForm((f) => {
+      const [first, ...rest] = me.name.split(/\s+/);
+      return {
+        ...f,
+        firstName: f.firstName || first || "",
+        lastName: f.lastName || rest.join(" "),
+        email: f.email || me.email,
+        phone: f.phone || me.phone,
+      };
+    })
+  );
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    const res = await submitEnquiry({
+      name: `${form.firstName} ${form.lastName}`.trim(),
+      email: form.email,
+      phone: form.phone,
+      message: form.message,
+      source: "contact",
+      pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
+    });
+    setBusy(false);
+    if (res.success) setDone(true);
+    else setError(res.error ?? "Something went wrong. Please try again.");
+  };
+
   const bentoItems = [
     { icon: MapPin, title: "Headquarters", desc: "ILD Trade Center, Sector 47, Gurugram – 122018", href: "#map", isLink: true },
     { icon: Mail, title: "Email Us", desc: "sales@allnewlaunches.com", href: "mailto:sales@allnewlaunches.com", isLink: true },
@@ -117,45 +174,111 @@ export default function ContactLayout() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
           >
-            <form className="rounded-[2.5rem] border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-12">
+            <form
+              onSubmit={submit}
+              className="rounded-[2.5rem] border border-slate-100 bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-12"
+            >
               <h3 className="mb-8 font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900">
                 Send a Message
               </h3>
-              
-              <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">First Name</label>
-                  <input type="text" placeholder="John" className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
+
+              {done ? (
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <CheckCircle2 size={48} className="text-emerald-500" />
+                  <h4 className="text-xl font-bold text-slate-900">
+                    Message sent!
+                  </h4>
+                  <p className="max-w-sm text-slate-500">
+                    Thanks for reaching out — our team will get back to you shortly.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Last Name</label>
-                  <input type="text" placeholder="Doe" className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">First Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="John"
+                        value={form.firstName}
+                        onChange={(e) => set("firstName", e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">Last Name</label>
+                      <input
+                        type="text"
+                        placeholder="Doe"
+                        value={form.lastName}
+                        onChange={(e) => set("lastName", e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                      />
+                    </div>
+                  </div>
 
-              <div className="mb-6 space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Email Address</label>
-                <input type="email" placeholder="john@example.com" className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
-              </div>
+                  <div className="mb-6 space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="john@example.com"
+                      value={form.email}
+                      onChange={(e) => set("email", e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                    />
+                  </div>
 
-              <div className="mb-6 space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Phone Number</label>
-                <input type="tel" placeholder="+91 98765 43210" className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" />
-              </div>
+                  <div className="mb-6 space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="+91 98765 43210"
+                      value={form.phone}
+                      onChange={(e) => set("phone", e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                    />
+                  </div>
 
-              <div className="mb-8 space-y-2">
-                <label className="text-sm font-semibold text-slate-700">How can we help?</label>
-                <textarea rows={4} placeholder="Tell us about the property you are looking for..." className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"></textarea>
-              </div>
-              
-              <motion.button 
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1d4ed8] px-8 py-4 font-semibold text-white transition hover:bg-blue-800"
-              >
-                Send Message 
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-              </motion.button>
+                  <div className="mb-6 space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">How can we help?</label>
+                    <textarea
+                      rows={4}
+                      placeholder="Tell us about the property you are looking for..."
+                      value={form.message}
+                      onChange={(e) => set("message", e.target.value)}
+                      className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="mb-6 rounded-2xl bg-red-50 px-5 py-3 text-sm text-red-600">
+                      {error}
+                    </p>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    disabled={busy}
+                    whileHover={{ scale: busy ? 1 : 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1d4ed8] px-8 py-4 font-semibold text-white transition hover:bg-blue-800 disabled:opacity-60"
+                  >
+                    {busy ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <>
+                        Send Message
+                        <ArrowRight
+                          size={18}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
+                      </>
+                    )}
+                  </motion.button>
+                </>
+              )}
             </form>
           </motion.div>
         </div>

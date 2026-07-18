@@ -70,6 +70,24 @@ export class ProfileRepository {
       oldWpUserId: (data.old_wp_user_id as number | null) ?? null,
     };
   }
+
+  /** Name/phone/email for prefilling lead forms for the signed-in user. */
+  async getContactInfo(
+    authId: string
+  ): Promise<{ fullName: string | null; phone: string | null; email: string | null } | null> {
+    const supabase = createServiceRoleClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, phone, email")
+      .eq("id", authId)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      fullName: (data.full_name as string | null) || null,
+      phone: (data.phone as string | null) || null,
+      email: (data.email as string | null) || null,
+    };
+  }
 }
 
 export interface SessionProfile {

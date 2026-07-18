@@ -57,11 +57,17 @@ export async function submitEnquiry(
     if (name.length < 2) {
       return { success: false, error: "Please enter your name." };
     }
-    if (phone.replace(/\D/g, "").length < 7) {
-      return { success: false, error: "Please enter a valid phone number." };
-    }
-    if (email && !EMAIL_RE.test(email)) {
+    const validPhone = phone.replace(/\D/g, "").length >= 7;
+    const validEmail = EMAIL_RE.test(email);
+    if (email && !validEmail) {
       return { success: false, error: "Please enter a valid email." };
+    }
+    // At least one way to reach the person.
+    if (!validPhone && !validEmail) {
+      return {
+        success: false,
+        error: "Please add a phone number or email so we can reach you.",
+      };
     }
   }
 

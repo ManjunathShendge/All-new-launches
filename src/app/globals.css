@@ -78,6 +78,10 @@ body {
   font-family: var(--font-body), Inter, system-ui, sans-serif;
   min-height: 100vh;
   margin: 0;
+  /* Clip stray horizontal overflow (e.g. decorative absolute blobs) so mobile
+     never zooms out / scrolls sideways. `clip` (not `hidden`) keeps
+     position: sticky working. */
+  overflow-x: clip;
 }
 
 html {
@@ -97,7 +101,10 @@ html {
 @layer base {
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
-    color: var(--on-background);
+    /* Inherit the surrounding text color so headings are white on dark heroes
+       and dark on light sections. `body` is on-background, so ordinary pages
+       still get dark headings; explicit text-* utilities always win. */
+    color: inherit;
   }
 
   h2 {
@@ -148,6 +155,16 @@ select::-ms-expand {
 
 img {
   max-width: 100%;
+}
+
+/* Indeterminate progress bar used by the page loader. */
+@keyframes anl-progress {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
 }
 
 ::selection {

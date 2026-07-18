@@ -3,6 +3,7 @@ import { PropertyFilter } from "@/types/property-filter";
 import { getSavedPropertyIds } from "@/lib/actions/user-activity.action";
 import PropertyCard from "@/components/properties/PropertyCard";
 import FilterSidebar from "@/components/properties/FilterSidebar";
+import PropertySearchBar from "@/components/properties/PropertySearchBar";
 import SortSelect from "@/components/properties/SortSelect";
 import Pagination from "@/components/properties/Pagination";
 import { SearchX } from "lucide-react";
@@ -41,6 +42,7 @@ export default async function PropertyListing({
   const page = toNumber(first(searchParams.page)) ?? 1;
 
   const filter: PropertyFilter = {
+    search: first(searchParams.search),
     city: first(searchParams.city),
     locality: first(searchParams.locality),
     transactionType: first(searchParams.transactionType),
@@ -67,11 +69,16 @@ export default async function PropertyListing({
   return (
     <main className="min-h-screen bg-(--surface)">
       <div className="w-full px-5 py-10 sm:px-8 lg:px-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {heading}
-          </h1>
-          {subheading && <p className="mt-2 text-muted">{subheading}</p>}
+        <header className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {heading}
+            </h1>
+            {subheading && <p className="mt-2 text-muted">{subheading}</p>}
+          </div>
+          <div className="w-full lg:w-96 lg:shrink-0">
+            <PropertySearchBar scope={scope} />
+          </div>
         </header>
 
         <div className="flex flex-col gap-8 lg:flex-row">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Send, CheckCircle2 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { submitLead } from "@/app/actions/lead.actions";
+import { usePrefillContact } from "@/lib/hooks/usePrefillContact";
 
 export default function ContactForm({
   propertyId,
@@ -26,6 +27,16 @@ export default function ContactForm({
 
   const set = (k: keyof typeof form, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  // Prefill for signed-in users (still fully editable).
+  usePrefillContact((me) =>
+    setForm((f) => ({
+      ...f,
+      name: f.name || me.name,
+      email: f.email || me.email,
+      phone: f.phone || me.phone,
+    }))
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

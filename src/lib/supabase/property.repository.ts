@@ -7,6 +7,11 @@ import {
 import { imageRepository } from "./image.repository";
 import { mapPropertyCard } from "../mappers/property.mapper";
 import { PropertyCard } from "@/types/property-card";
+import type {
+  PropertySuggestion,
+  SearchSuggestions,
+} from "@/types/property-search";
+import type { TrendingLocation } from "@/types/trending";
 
 // Listings under review or rejected must never surface on the public site.
 // Exclusion (not IN) rather than a whitelist so the existing imported catalog
@@ -15,11 +20,15 @@ import { PropertyCard } from "@/types/property-card";
 const HIDDEN_PUBLIC_STATUSES = "(pending,rejected)";
 
 export class PropertyRepository {
-  private async withImages(rows: any[]): Promise<PropertyCard[]> {
+  private async withImages(
+    rows: Record<string, unknown>[]
+  ): Promise<PropertyCard[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id as number);
     const imageMap = await imageRepository.getPrimaryImageMap(ids);
-    return rows.map((row) => mapPropertyCard(row, imageMap.get(row.id) ?? null));
+    return rows.map((row) =>
+      mapPropertyCard(row, imageMap.get(row.id as number) ?? null)
+    );
   }
 
   async getById(id: number) {
@@ -120,6 +129,15 @@ export class PropertyRepository {
       })
       .not("status", "in", HIDDEN_PUBLIC_STATUSES);
 
+    // Free-text search across title, locality and city (`*` wildcard in .or()).
+    if (filter?.search) {
+      const s = filter.search.replace(/[%*,()]/g, "").trim();
+      if (s)
+        query = query.or(
+          `title.ilike.*${s}*,locality.ilike.*${s}*,city.ilike.*${s}*`
+        );
+    }
+
     // City/locality casing is inconsistent in the data — match partially.
     if (filter?.city)
       query = query.ilike("city", `%${filter.city}%`);
@@ -142,13 +160,33 @@ export class PropertyRepository {
     if (filter?.possessionStatus)
       query = query.ilike("possession_status", `%${filter.possessionStatus}%`);
 
-    // `property_type` / `configuration` are blank for new projects — the real
-    // values live in the `available_*` columns, so match against those.
-    if (filter?.propertyType)
-      query = query.ilike("available_property_types", `%${filter.propertyType}%`);
+    // Resale/single units carry the value in `property_type`; new projects keep
+    // it in `available_property_types`. Match either (case-insensitive keyword)
+    // so the filter works across both listing shapes.
+    // NOTE: inside `.or()` the ilike wildcard is `*` (not `%`).
+    if (filter?.propertyType) {
+      const pt = filter.propertyType.replace(/[%*,()]/g, "");
+      query = query.or(
+        `property_type.ilike.*${pt}*,available_property_types.ilike.*${pt}*`
+      );
+    }
 
-    if (filter?.configuration)
-      query = query.ilike("available_configurations", `%${filter.configuration}%`);
+    // Configuration (e.g. "2bhk"): match the numeric bedroom count on single
+    // units and the "N BHK" text on projects — whichever the row stores.
+    if (filter?.configuration) {
+      const n = parseInt(filter.configuration, 10);
+      const ors: string[] = [];
+      if (Number.isFinite(n)) {
+        ors.push(`bedrooms.eq.${n}`);
+        ors.push(`configuration.ilike.*${n} BHK*`);
+        ors.push(`available_configurations.ilike.*${n} BHK*`);
+      } else {
+        const cfg = filter.configuration.replace(/[%*,()]/g, "");
+        ors.push(`configuration.ilike.*${cfg}*`);
+        ors.push(`available_configurations.ilike.*${cfg}*`);
+      }
+      query = query.or(ors.join(","));
+    }
 
     if (filter?.minPrice)
       query = query.gte("min_price", filter.minPrice);
@@ -187,6 +225,81 @@ export class PropertyRepository {
       page,
       limit,
     };
+  }
+
+  /**
+   * Autocomplete for the listing search bar: matching properties plus the
+   * distinct localities and cities that contain the query. Scope-aware so the
+   * NRI / Upcoming pages suggest within their own set.
+   */
+  async searchSuggestions(
+    rawQuery: string,
+    scope?: string
+  ): Promise<SearchSuggestions> {
+    const q = rawQuery.replace(/[%*,()]/g, "").trim();
+    if (q.length < 2) return { properties: [], localities: [], cities: [] };
+
+    const supabase = await createClient();
+    let query = supabase
+      .from("properties")
+      .select("id, slug, title, city, locality")
+      .not("status", "in", HIDDEN_PUBLIC_STATUSES)
+      .or(`title.ilike.*${q}*,locality.ilike.*${q}*,city.ilike.*${q}*`)
+      .limit(25);
+
+    if (scope) query = query.ilike("possession_status", `%${scope}%`);
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+
+    const properties: PropertySuggestion[] = rows.slice(0, 6).map((r) => ({
+      id: r.id as number,
+      slug: (r.slug as string) ?? "",
+      title: (r.title as string) ?? "",
+      city: (r.city as string | null) ?? null,
+      locality: (r.locality as string | null) ?? null,
+    }));
+
+    const ql = q.toLowerCase();
+    const dedupe = (values: (string | null)[]): string[] => {
+      const seen = new Set<string>();
+      const out: string[] = [];
+      for (const v of values) {
+        const s = (v ?? "").trim();
+        if (!s) continue;
+        const key = s.toLowerCase();
+        if (seen.has(key) || !key.includes(ql)) continue;
+        seen.add(key);
+        out.push(s);
+        if (out.length >= 5) break;
+      }
+      return out;
+    };
+
+    return {
+      properties,
+      localities: dedupe(rows.map((r) => r.locality as string | null)),
+      cities: dedupe(rows.map((r) => r.city as string | null)),
+    };
+  }
+
+  /**
+   * Trending localities computed in Postgres (see sql/2026-07-trending-locations.sql):
+   * localities with the most active listings, plus their city + average price.
+   */
+  async getTrendingLocations(limit = 6): Promise<TrendingLocation[]> {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("trending_locations", {
+      p_limit: limit,
+    });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: Record<string, unknown>) => ({
+      locality: (r.locality as string) ?? "",
+      city: (r.city as string | null) ?? null,
+      listings: Number(r.listings ?? 0),
+      avgPrice: r.avg_price != null ? Number(r.avg_price) : null,
+    }));
   }
 }
 

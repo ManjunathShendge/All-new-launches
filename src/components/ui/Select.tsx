@@ -28,7 +28,8 @@ interface SelectProps {
   wrapperClassName?: string;
   /** Compact/auto-width (filters, pills). Default is full-width (form fields). */
   inline?: boolean;
-  /** Open the menu on hover (default true). */
+  /** Also open on hover (desktop only). Default false — click/tap to open,
+   *  which works reliably on both mobile and desktop. */
   openOnHover?: boolean;
   disabled?: boolean;
   title?: string;
@@ -64,6 +65,18 @@ function parseOptions(children: ReactNode): Option[] {
   return out;
 }
 
+// Track the last scroll time app-wide so hover-open never fights scrolling.
+let lastScrollAt = 0;
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "scroll",
+    () => {
+      lastScrollAt = Date.now();
+    },
+    { passive: true, capture: true }
+  );
+}
+
 function nextEnabled(options: Option[], from: number, dir: 1 | -1): number {
   let i = from;
   for (let step = 0; step < options.length; step++) {
@@ -88,7 +101,7 @@ export default function Select({
   className = "",
   wrapperClassName = "",
   inline = false,
-  openOnHover = true,
+  openOnHover = false,
   disabled = false,
   title,
   name,
@@ -146,22 +159,43 @@ export default function Select({
   const hoverOpen = () => {
     if (!openOnHover) return;
     cancelTimers();
-    openTimer.current = setTimeout(openMenu, 120);
+    openTimer.current = setTimeout(() => {
+      // Don't pop open if the user is mid-scroll (prevents scroll fighting).
+      if (Date.now() - lastScrollAt < 220) return;
+      openMenu();
+    }, 120);
   };
 
   useEffect(() => cancelTimers, []);
 
-  // Keep the menu aligned while open (scroll/resize).
+  // Dismiss when the *page* (or a scroll container holding the trigger) scrolls,
+  // so the fixed menu can't detach or trap the wheel. Crucially, ignore scrolls
+  // from unrelated elements (auto-scrolling carousels/marquees, the menu's own
+  // option list) — otherwise they'd slam the menu shut the instant it opens.
   useEffect(() => {
     if (!open) return;
-    const reflow = () => position();
-    window.addEventListener("scroll", reflow, true);
-    window.addEventListener("resize", reflow);
-    return () => {
-      window.removeEventListener("scroll", reflow, true);
-      window.removeEventListener("resize", reflow);
+    const onScroll = (e: Event) => {
+      const t = e.target;
+      // Scrolling inside the open menu is fine.
+      if (t instanceof Node && menuRef.current?.contains(t)) return;
+      const isPageScroll =
+        t === document ||
+        t === document.documentElement ||
+        t === document.body;
+      const trigger = triggerRef.current;
+      const scrolledAncestor =
+        t instanceof HTMLElement && trigger != null && t.contains(trigger);
+      if (isPageScroll || scrolledAncestor) {
+        cancelTimers();
+        closeMenu();
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", closeMenu);
+    };
   }, [open]);
 
   // Close on outside click.
@@ -218,8 +252,8 @@ export default function Select({
   return (
     <span
       className={`relative items-center ${inline ? "inline-flex" : "flex w-full"} ${wrapperClassName}`}
-      onMouseEnter={hoverOpen}
-      onMouseLeave={scheduleClose}
+      onMouseEnter={openOnHover ? hoverOpen : undefined}
+      onMouseLeave={openOnHover ? scheduleClose : undefined}
     >
       <button
         ref={triggerRef}
@@ -253,7 +287,7 @@ export default function Select({
             ref={menuRef}
             role="listbox"
             onMouseEnter={cancelTimers}
-            onMouseLeave={scheduleClose}
+            onMouseLeave={openOnHover ? scheduleClose : undefined}
             style={{
               position: "fixed",
               left: coords.left,

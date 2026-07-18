@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, Variants } from "motion/react";
+import Link from "next/link";
 import { Flame, ArrowUpRight, Calendar, Sparkles } from "lucide-react";
 
 interface MetricCardProps {
@@ -136,22 +137,20 @@ export default function HighROIInvestmentOpportunities() {
 
             {/* Call to Action Container */}
             <motion.div variants={leftItemVariants} className="flex flex-wrap gap-4 pt-2">
-              <motion.button 
-                whileHover={{ y: -3, boxShadow: "0 12px 30px rgba(255,255,255,0.25)" }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex h-12 items-center justify-center rounded-full bg-white px-7 text-label-md font-bold text-[#1E50FF] shadow-lg transition-colors duration-200"
+              <Link
+                href="/properties"
+                className="inline-flex h-12 items-center justify-center rounded-full bg-white px-7 text-label-md font-bold text-[#1E50FF] shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
               >
                 Start Investing Today
-              </motion.button>
-              
-              <motion.button 
-                whileHover={{ y: -3, backgroundColor: "rgba(255,255,255,0.15)" }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/30 bg-white/5 px-7 text-label-md font-bold text-white backdrop-blur-md transition-colors duration-200"
+              </Link>
+
+              <Link
+                href="/contact"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/30 bg-white/5 px-7 text-label-md font-bold text-white backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/15"
               >
                 <Calendar size={16} />
                 Schedule Consultation
-              </motion.button>
+              </Link>
             </motion.div>
 
           </div>
