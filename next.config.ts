@@ -48,8 +48,9 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  // Razorpay opens its checkout in an iframe.
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+  // Razorpay opens its checkout in an iframe; Google Maps embeds the location
+  // map; YouTube embeds property videos.
+  "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com",
   // Images can come from Cloudinary, Unsplash, data/blob URIs — kept to https.
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",

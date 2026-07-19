@@ -163,6 +163,28 @@ export function mapPropertyDetail(
 
     pricePerSqft: toPositiveFloat(row.price_per_sqft),
 
+    carpetArea: toPositiveFloat(row.carpet_area),
+    superBuiltupArea: toPositiveFloat(
+      row.super_builtup_area ?? row.super_built_up_area
+    ),
+
+    floorNumber: toNullableInt(row.floor_number),
+    totalFloors: toNullableInt(row.total_floors),
+
+    balconies: toNullableInt(row.balconies),
+
+    facing: row.facing
+      ? String(row.facing)
+          .split(",")
+          .map((s: string) => titleCase(s.trim()))
+          .filter(Boolean)
+          .join(", ")
+      : null,
+    furnishing: row.furnishing_status ? titleCase(row.furnishing_status) : null,
+    ownershipType: row.ownership_type ? titleCase(row.ownership_type) : null,
+
+    virtualTourUrl: row.virtual_tour_url || null,
+
     parking:
       toNullableInt(row.parking_spaces) ??
       toNullableInt(row.parking_count) ??

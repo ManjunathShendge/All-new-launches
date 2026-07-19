@@ -23,6 +23,20 @@ export interface PropertyDetail extends PropertyCard {
 
   pricePerSqft: number | null;
 
+  carpetArea: number | null;
+  superBuiltupArea: number | null;
+
+  floorNumber: number | null;
+  totalFloors: number | null;
+
+  balconies: number | null;
+
+  facing: string | null;
+  furnishing: string | null;
+  ownershipType: string | null;
+
+  virtualTourUrl: string | null;
+
   parking: number | null;
 
   totalUnits: number | null;

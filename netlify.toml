@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Runs the App Router, server actions, sitemap/robots, image optimization,
+# and the security headers from next.config.ts on Netlify Functions.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  # Match the local toolchain (Node 22). Do NOT put secrets here — this file is
+  # committed to Git. App env vars go in Netlify's dashboard.
+  NODE_VERSION = "22"

@@ -40,6 +40,8 @@ function safeExt(name: string): string {
 
 const IMAGE_RE = /^image\/(jpeg|png|webp|gif)$/;
 const VIDEO_RE = /^video\/(mp4|webm|ogg)$/;
+// Floor plans may be uploaded as PDFs (the form advertises PDF support).
+const DOC_RE = /^application\/pdf$/;
 
 /**
  * Mint a one-time presigned PUT URL for R2 so the browser can upload directly
@@ -53,7 +55,11 @@ export async function getR2UploadUrl(
   if (!isR2Configured()) {
     return { ok: false, error: "Media storage is not configured yet." };
   }
-  if (!IMAGE_RE.test(contentType) && !VIDEO_RE.test(contentType)) {
+  if (
+    !IMAGE_RE.test(contentType) &&
+    !VIDEO_RE.test(contentType) &&
+    !DOC_RE.test(contentType)
+  ) {
     return { ok: false, error: "Unsupported file type." };
   }
 

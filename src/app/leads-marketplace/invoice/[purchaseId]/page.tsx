@@ -7,6 +7,7 @@ import { marketplaceRepository } from "@/lib/supabase/marketplace.repository";
 import PrintButton from "@/components/marketplace/PrintButton";
 
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
 
 function money(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;

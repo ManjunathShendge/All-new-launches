@@ -129,6 +129,30 @@ export class EventRepository {
     }
   }
 
+  /** Slugs + last-modified for every published event, for the sitemap. */
+  async getPublishedSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
+    try {
+      const db = createServiceRoleClient();
+      const { data, error } = await db
+        .from("events")
+        .select("slug, starts_at")
+        .eq("status", "published")
+        .not("slug", "is", null)
+        .limit(2000);
+
+      if (error || !data) return [];
+      return data
+        .filter((r) => r.slug)
+        .map((r) => ({
+          slug: r.slug as string,
+          updatedAt:
+            (r.starts_at as string | null) ?? new Date().toISOString(),
+        }));
+    } catch {
+      return [];
+    }
+  }
+
   async getBySlug(slug: string): Promise<EventDetail | null> {
     try {
       const db = createServiceRoleClient();

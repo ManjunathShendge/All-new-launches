@@ -5,6 +5,7 @@ import { CalendarDays, MapPin, Users, ArrowLeft } from "lucide-react";
 import { eventService } from "@/lib/services/event.service";
 import { eventCategoryLabel } from "@/types/event";
 import EventRsvp from "@/components/events/EventRsvp";
+import { SITE_URL, SITE_NAME, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,36 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const event = await eventService.getEvent(slug);
-  return { title: event ? event.title : "Event" };
+  if (!event) return { title: "Event not found" };
+
+  const place =
+    [event.locality, event.city].filter(Boolean).join(", ") ||
+    event.venue ||
+    "";
+  const description =
+    event.description?.replace(/\s+/g, " ").trim().slice(0, 155) ||
+    `Register for ${event.title}${place ? ` in ${place}` : ""} — an event by ${SITE_NAME}.`;
+  const url = `${SITE_URL}/events/${event.slug}`;
+  const image = event.bannerUrl ? absoluteUrl(event.bannerUrl) : undefined;
+
+  return {
+    title: event.title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: event.title,
+      description,
+      images: image ? [image] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 export default async function EventDetailPage({
@@ -51,8 +81,39 @@ export default async function EventDetailPage({
     event.venue ||
     "Location to be announced";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.description ?? undefined,
+    startDate: event.startsAt,
+    endDate: event.endsAt ?? undefined,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    image: event.bannerUrl ? [absoluteUrl(event.bannerUrl)] : undefined,
+    url: `${SITE_URL}/events/${event.slug}`,
+    location: {
+      "@type": "Place",
+      name: event.venue ?? place,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: event.city ?? event.locality ?? undefined,
+        addressCountry: "IN",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Link
         href="/events"
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"

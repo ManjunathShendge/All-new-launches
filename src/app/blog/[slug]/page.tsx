@@ -14,8 +14,7 @@ import { propertyApi } from "@/lib/api/property.api";
 import { NextArticles } from "@/components/blog/NextArticles";
 import BlogSidebar from "@/components/blog/BlogSidebar";
 import TableOfContents from "@/components/blog/TableOfContents";
-
-const SITE_URL = "https://allnewlaunches.com";
+import { SITE_URL } from "@/lib/seo";
 
 // Rebuild pages hourly so the sidebar's featured properties stay fresh (ISR).
 export const revalidate = 3600;

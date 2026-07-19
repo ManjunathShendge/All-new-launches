@@ -39,6 +39,8 @@ import ShareButtons from "@/components/properties/detail/ShareButtons";
 import ReadMore from "@/components/properties/detail/ReadMore";
 import SimilarCarousel from "@/components/properties/detail/SimilarCarousel";
 import RecentlyViewedTracker from "@/components/properties/RecentlyViewedTracker";
+import FloorPlanCarousel from "@/components/properties/detail/FloorPlanCarousel";
+import { SITE_URL, SITE_NAME, absoluteUrl } from "@/lib/seo";
 
 // Deterministic pseudo-live stats so each property shows stable, realistic numbers.
 function liveStats(id: number) {
@@ -49,6 +51,15 @@ function liveStats(id: number) {
     rating: (4 + ((id % 9) + 1) / 10).toFixed(1), // 4.1 – 4.9
     reviews: 40 + (id % 200),
   };
+}
+
+// Extract a YouTube id from common URL shapes → embed URL, else null.
+function getYouTubeEmbed(url: string | null): string | null {
+  if (!url) return null;
+  const m = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/
+  );
+  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 }
 
 async function getProperty(slug: string): Promise<PropertyDetail | null> {
@@ -67,9 +78,32 @@ export async function generateMetadata({
   const { slug } = await params;
   const property = await getProperty(slug);
   if (!property) return { title: "Property not found" };
+
+  const place = [property.locality, property.city].filter(Boolean).join(", ");
+  const title = place ? `${property.title} — ${place}` : property.title;
+  const description =
+    property.description?.replace(/\s+/g, " ").trim().slice(0, 155) ||
+    `Explore ${property.title}${place ? ` in ${place}` : ""} — pricing, floor plans, amenities and RERA details on ${SITE_NAME}.`;
+  const url = `${SITE_URL}/properties/${property.slug}`;
+  const image = property.primaryImage ? absoluteUrl(property.primaryImage) : undefined;
+
   return {
-    title: `${property.title} | ${property.locality ?? ""}`.trim(),
-    description: property.description?.slice(0, 155) ?? undefined,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
@@ -160,13 +194,114 @@ export default async function PropertyDetailPage({
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "details", label: "Details" },
+    ...(property.amenityLabels.length ? [{ id: "amenities", label: "Amenities" }] : []),
     ...(property.floorPlans.length ? [{ id: "floor-plans", label: "Floor Plans" }] : []),
+    ...(property.videoUrl || property.virtualTourUrl ? [{ id: "media", label: "Video & Tour" }] : []),
     { id: "location", label: "Location" },
     ...(similar.length ? [{ id: "similar", label: "Similar" }] : []),
   ];
 
+  // Only include rows that actually have a value, so residential / commercial /
+  // land listings each show a clean, relevant set (no rows full of "—").
+  const sqft = (n: number | null) =>
+    n ? `${n.toLocaleString("en-IN")} sq ft` : null;
+  const detailRows = (
+    [
+      { label: "Price Range", value: formatPriceRange(property.minPrice, property.maxPrice) },
+      property.pricePerSqft ? { label: "Price per Sq Ft", value: formatPricePerSqft(property.pricePerSqft) } : null,
+      { label: "Property ID", value: property.propertyCode },
+      { label: "Property Type", value: titleCase(property.propertyType) || "—" },
+      property.projectName ? { label: "Project", value: property.projectName } : null,
+      property.builderName ? { label: "Builder", value: property.builderName } : null,
+      { label: "Locality", value: location || "—" },
+      { label: "Area Range", value: formatAreaRange(property.minArea, property.maxArea) },
+      sqft(property.carpetArea) ? { label: "Carpet Area", value: sqft(property.carpetArea)! } : null,
+      sqft(property.superBuiltupArea) ? { label: "Super Built-up Area", value: sqft(property.superBuiltupArea)! } : null,
+      property.configurations.length ? { label: "Configurations", value: configs } : null,
+      property.bedrooms ? { label: "Bedrooms", value: String(property.bedrooms) } : null,
+      property.bathrooms ? { label: "Bathrooms", value: String(property.bathrooms) } : null,
+      property.balconies ? { label: "Balconies", value: String(property.balconies) } : null,
+      property.floorNumber
+        ? { label: "Floor", value: property.totalFloors ? `${property.floorNumber} of ${property.totalFloors}` : String(property.floorNumber) }
+        : property.totalFloors ? { label: "Total Floors", value: String(property.totalFloors) } : null,
+      property.facing ? { label: "Facing", value: property.facing } : null,
+      property.furnishing ? { label: "Furnishing", value: property.furnishing } : null,
+      property.parking != null ? { label: "Parking", value: String(property.parking) } : null,
+      possession && possession !== "N/A" ? { label: "Possession", value: possession } : null,
+      property.ownershipType ? { label: "Ownership", value: property.ownershipType } : null,
+      property.reraNumber ? { label: "RERA ID", value: property.reraNumber } : null,
+      property.landmarks ? { label: "Landmarks", value: property.landmarks } : null,
+    ].filter(Boolean) as { label: string; value: string }[]
+  );
+  const detailMid = Math.ceil(detailRows.length / 2);
+  const videoEmbed = getYouTubeEmbed(property.videoUrl);
+
+  // Overview "quick facts": show only the chips that are relevant to THIS
+  // listing (no "Configurations: N/A" on an office), capped at 5.
+  const areaRange = formatAreaRange(property.minArea, property.maxArea);
+  const meaningful = (v?: string | null): v is string =>
+    !!v && v !== "—" && v.toUpperCase() !== "N/A";
+  const quickFacts = (
+    [
+      { icon: <CheckCircle2 size={18} />, label: "Project Status", value: projectStatus },
+      property.configurations.length ? { icon: <LayoutGrid size={18} />, label: "Configurations", value: configs } : null,
+      property.bedrooms ? { icon: <HomeIcon size={18} />, label: "Bedrooms", value: `${property.bedrooms} BHK` } : null,
+      meaningful(areaRange) ? { icon: <Ruler size={18} />, label: "Area Range", value: areaRange } : null,
+      meaningful(possession) ? { icon: <CalendarClock size={18} />, label: "Possession", value: possession } : null,
+      property.parking != null ? { icon: <Car size={18} />, label: "Parking", value: String(property.parking) } : null,
+      property.furnishing ? { icon: <HomeIcon size={18} />, label: "Furnishing", value: property.furnishing } : null,
+      { icon: <HomeIcon size={18} />, label: "Property Type", value: titleCase(property.propertyType) || "—" },
+    ].filter(Boolean) as { icon: React.ReactNode; label: string; value: string }[]
+  ).slice(0, 5);
+
+  // Structured data — a real-estate listing so Google can show rich results
+  // (price, location, images). Only include fields we actually have.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: property.title,
+    description: property.description ?? undefined,
+    url: `${SITE_URL}/properties/${property.slug}`,
+    image: galleryUrls.length ? galleryUrls.map((u) => absoluteUrl(u)) : undefined,
+    ...(location
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: property.address ?? undefined,
+            addressLocality: property.city ?? property.locality ?? undefined,
+            addressRegion: property.state ?? undefined,
+            postalCode: property.pincode ?? undefined,
+            addressCountry: "IN",
+          },
+        }
+      : {}),
+    ...(property.latitude && property.longitude
+      ? {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: property.latitude,
+            longitude: property.longitude,
+          },
+        }
+      : {}),
+    ...(property.minPrice
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: property.minPrice,
+            priceCurrency: "INR",
+            availability: "https://schema.org/InStock",
+          },
+        }
+      : {}),
+  };
+
   return (
     <main className="min-h-screen bg-(--surface) pb-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <RecentlyViewedTracker
         id={property.id}
         slug={property.slug}
@@ -211,11 +346,9 @@ export default async function PropertyDetailPage({
 
                   {/* Quick facts */}
                   <div className="mt-6 grid grid-cols-2 gap-5 border-t border-(--border) pt-6 sm:grid-cols-3 lg:grid-cols-5">
-                    <InfoChip icon={<CheckCircle2 size={18} />} label="Project Status" value={projectStatus} />
-                    <InfoChip icon={<Ruler size={18} />} label="Area Range" value={formatAreaRange(property.minArea, property.maxArea)} />
-                    <InfoChip icon={<CalendarClock size={18} />} label="Possession" value={possession} />
-                    <InfoChip icon={<Car size={18} />} label="Parking" value={property.parking != null ? String(property.parking) : "—"} />
-                    <InfoChip icon={<LayoutGrid size={18} />} label="Configurations" value={configs} />
+                    {quickFacts.map((f) => (
+                      <InfoChip key={f.label} icon={f.icon} label={f.label} value={f.value} />
+                    ))}
                   </div>
                 </div>
 
@@ -277,34 +410,76 @@ export default async function PropertyDetailPage({
                   <h2 className="mb-4 text-xl font-bold text-foreground">Property Details</h2>
                   <div className="grid gap-x-10 sm:grid-cols-2">
                     <div>
-                      <DetailRow label="Price Range" value={formatPriceRange(property.minPrice, property.maxPrice)} />
-                      <DetailRow label="Price per Sq Ft" value={formatPricePerSqft(property.pricePerSqft) || "—"} />
-                      <DetailRow label="Property ID" value={property.propertyCode} />
-                      <DetailRow label="Property Type" value={titleCase(property.propertyType) || "—"} />
-                      <DetailRow label="Locality" value={location || "—"} />
+                      {detailRows.slice(0, detailMid).map((r) => (
+                        <DetailRow key={r.label} label={r.label} value={r.value} />
+                      ))}
                     </div>
                     <div>
-                      <DetailRow label="Area Range" value={formatAreaRange(property.minArea, property.maxArea)} />
-                      <DetailRow label="Configurations" value={configs} />
-                      <DetailRow label="Parking" value={property.parking != null ? String(property.parking) : "—"} />
-                      <DetailRow label="Possession" value={possession} />
-                      <DetailRow label="RERA ID" value={property.reraNumber ?? "—"} />
+                      {detailRows.slice(detailMid).map((r) => (
+                        <DetailRow key={r.label} label={r.label} value={r.value} />
+                      ))}
                     </div>
                   </div>
                 </div>
               </section>
+
+              {/* Amenities */}
+              {property.amenityLabels.length > 0 && (
+                <section id="amenities" className="mt-6 scroll-mt-32">
+                  <div className="rounded-card border border-(--border) bg-(--surface-container-lowest) p-6">
+                    <h2 className="mb-4 text-xl font-bold text-foreground">Amenities</h2>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                      {property.amenityLabels.map((a) => (
+                        <div key={a} className="flex items-center gap-2 text-sm text-foreground">
+                          <CheckCircle2 size={16} className="shrink-0 text-[#2563EB]" />
+                          <span>{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* Floor Plans */}
               {property.floorPlans.length > 0 && (
                 <section id="floor-plans" className="mt-6 scroll-mt-32">
                   <div className="rounded-card border border-(--border) bg-(--surface-container-lowest) p-6">
                     <h2 className="mb-4 text-xl font-bold text-foreground">Floor Plans</h2>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {property.floorPlans.map((fp) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img key={fp.id} src={fp.imageUrl} alt="Floor plan" className="w-full rounded-lg border border-(--border)" />
-                      ))}
-                    </div>
+                    <FloorPlanCarousel plans={property.floorPlans} />
+                  </div>
+                </section>
+              )}
+
+              {/* Video & Virtual Tour */}
+              {(property.videoUrl || property.virtualTourUrl) && (
+                <section id="media" className="mt-6 scroll-mt-32">
+                  <div className="rounded-card border border-(--border) bg-(--surface-container-lowest) p-6">
+                    <h2 className="mb-4 text-xl font-bold text-foreground">Video & Tour</h2>
+                    {property.videoUrl && (
+                      <div className="overflow-hidden rounded-lg border border-(--border)">
+                        {videoEmbed ? (
+                          <iframe
+                            title="Property video"
+                            src={videoEmbed}
+                            className="aspect-video w-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video controls src={property.videoUrl} className="aspect-video w-full bg-black" />
+                        )}
+                      </div>
+                    )}
+                    {property.virtualTourUrl && (
+                      <a
+                        href={property.virtualTourUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
+                      >
+                        <Eye size={16} /> Open Virtual Tour
+                      </a>
+                    )}
                   </div>
                 </section>
               )}
@@ -320,9 +495,10 @@ export default async function PropertyDetailPage({
                   <div className="overflow-hidden rounded-lg border border-(--border)">
                     <iframe
                       title="Location map"
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`}
                       className="h-72 w-full"
                       loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
                     />
                   </div>
                 </div>

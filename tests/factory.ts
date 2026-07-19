@@ -1,0 +1,85 @@
+import type { CreatePropertyInput } from "@/lib/actions/property-create.logic";
+import type { BuildRowCtx } from "@/lib/actions/property-create.logic";
+
+/**
+ * A complete, valid CreatePropertyInput (residential apartment for sale).
+ * Override any field per test. Mirrors what the multi-step form produces.
+ */
+export function makeInput(
+  overrides: Partial<CreatePropertyInput> = {}
+): CreatePropertyInput {
+  return {
+    purpose: "sell",
+    category: "residential",
+    listingType: "single",
+    title: "3 BHK Apartment in Test Nagar",
+    propertyType: "apartment",
+    price: "5000000",
+    priceNegotiable: false,
+    monthlyRent: "",
+    securityDeposit: "",
+    rentNegotiable: false,
+    minPrice: "",
+    maxPrice: "",
+    minArea: "",
+    maxArea: "",
+    pricePerSqft: "",
+    propertyTypes: [],
+    parkingSpaces: "",
+    extraParkingOnRequest: false,
+    facingsAvailable: [],
+    bedrooms: "3",
+    bathrooms: "2",
+    balconies: "1",
+    builtUpArea: "1200",
+    carpetArea: "1000",
+    superBuiltUpArea: "1400",
+    furnishing: "Semi-Furnished",
+    totalFloors: "10",
+    floorNumber: "4",
+    facing: "east",
+    ageOfProperty: "",
+    availableFrom: "",
+    coveredParking: "1",
+    openParking: "1",
+    shopFrontage: "",
+    ceilingHeight: "",
+    washroom: "",
+    hasMezzanine: false,
+    mezzanineArea: "",
+    mainRoadFacing: false,
+    cornerShop: false,
+    suitableFor: [],
+    city: "Bangalore",
+    locality: "Indiranagar",
+    projectName: "",
+    address: "123 Test Street",
+    pincode: "560038",
+    state: "Karnataka",
+    landmarks: "Near Metro",
+    latitude: "12.97",
+    longitude: "77.59",
+    amenities: ["lift_elevator", "power_backup"],
+    possessionStatus: "Ready to Move",
+    possessionMonth: "",
+    possessionYear: "",
+    ownershipType: "Freehold",
+    reraId: "RERA123",
+    propertyAgeCategory: "",
+    ocReceived: true,
+    description: "A nice test property with a sufficiently long description.",
+    videoUrl: "https://youtube.com/watch?v=abcdefghijk",
+    virtualTourUrl: "",
+    galleryUrls: [],
+    floorPlanUrls: [],
+    uploadedVideoUrl: "",
+    ...overrides,
+  };
+}
+
+export const CTX: BuildRowCtx = {
+  userId: 100001,
+  now: "2026-07-19T00:00:00.000Z",
+  slug: "test-slug-abc",
+  sku: "PROP-TEST01",
+};

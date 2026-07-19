@@ -89,6 +89,14 @@ bedrooms,
 bathrooms,
 balconies,
 
+super_builtup_area,
+super_built_up_area,
+floor_number,
+total_floors,
+facing,
+furnishing_status,
+ownership_type,
+
 parking,
 parking_count,
 parking_spaces,
@@ -103,6 +111,7 @@ possession_year,
 amenities,
 
 video_url,
+virtual_tour_url,
 
 landmarks,
 

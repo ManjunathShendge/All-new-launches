@@ -59,6 +59,34 @@ export class PropertyRepository {
     return data;
   }
 
+  /**
+   * Slugs + last-modified for every publicly visible property, for the sitemap.
+   * Lightweight (no images/joins) and capped so the sitemap build stays fast.
+   * Degrades to [] on any error so a sitemap request never 500s.
+   */
+  async getPublishedSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("properties")
+        .select("slug, created_at")
+        .not("status", "in", HIDDEN_PUBLIC_STATUSES)
+        .not("slug", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(5000);
+
+      if (error || !data) return [];
+      return data
+        .filter((r) => r.slug)
+        .map((r) => ({
+          slug: r.slug as string,
+          updatedAt: (r.created_at as string | null) ?? new Date().toISOString(),
+        }));
+    } catch {
+      return [];
+    }
+  }
+
   async getLatest(limit = 10) {
     const supabase = await createClient();
 

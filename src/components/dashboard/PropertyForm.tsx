@@ -14,6 +14,8 @@ import {
   Ruler,
   Building2,
   SlidersHorizontal,
+  FileText,
+  Upload,
 } from "lucide-react";
 import type { Purpose, Category } from "@/lib/dashboard/wizard.config";
 import { PURPOSE_LABEL, CATEGORY_LABEL } from "@/lib/dashboard/wizard.config";
@@ -637,7 +639,7 @@ export default function PropertyForm({
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-xl text-center">
+      <div className="mx-auto max-w-xl text-center" data-testid="property-submitted">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
           <Check className="h-7 w-7" />
         </div>
@@ -725,7 +727,10 @@ export default function PropertyForm({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+        <div
+          data-testid="form-error"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600"
+        >
           {error}
         </div>
       )}
@@ -1359,11 +1364,11 @@ export default function PropertyForm({
                 </p>
               )}
               {galleryUrls.length > 0 && (
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {galleryUrls.map((url, i) => (
                     <div
                       key={url}
-                      className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200"
+                      className="group relative h-20 w-20 overflow-hidden rounded-lg border border-slate-200"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={url} alt="" className="h-full w-full object-cover" />
@@ -1372,7 +1377,7 @@ export default function PropertyForm({
                         onClick={() =>
                           setGalleryUrls((g) => g.filter((_, j) => j !== i))
                         }
-                        className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                        className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
                         aria-label="Remove image"
                       >
                         <X className="h-3 w-3" />
@@ -1385,38 +1390,76 @@ export default function PropertyForm({
 
             {isProject && (
               <Field label="Floor Plans (Select Multiple)" hint="Supported: JPEG, PNG, WebP, PDF. Max size: 10 MB per file.">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf"
-                  disabled={uploading}
-                  onChange={(e) => onFloorPlans(e.target.files)}
-                  className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-2 file:text-sm file:font-medium disabled:opacity-60"
-                />
+                {/* Custom picker: a native file input shows only the LAST
+                    selection's count ("3 files") which is misleading when files
+                    are added across multiple picks. We hide it and show our own
+                    accurate running total instead. */}
+                <label
+                  className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 ${
+                    uploading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                  }`}
+                >
+                  <Upload className="h-4 w-4" />
+                  Choose Files
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      onFloorPlans(e.target.files);
+                      // Reset so re-picking the same file still fires onChange.
+                      e.target.value = "";
+                    }}
+                    className="sr-only"
+                  />
+                  <span className="text-slate-500">
+                    {floorPlanUrls.length > 0
+                      ? `${floorPlanUrls.length} file${floorPlanUrls.length > 1 ? "s" : ""} added`
+                      : "No file chosen"}
+                  </span>
+                </label>
+
                 {floorPlanUrls.length > 0 && (
-                  <ul className="mt-3 space-y-1.5">
-                    {floorPlanUrls.map((url, i) => (
-                      <li
-                        key={url}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
-                      >
-                        <span className="flex items-center gap-1.5 truncate">
-                          <Check className="h-3.5 w-3.5 shrink-0 text-green-600" />
-                          <span className="truncate">Floor plan {i + 1}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFloorPlanUrls((g) => g.filter((_, j) => j !== i))
-                          }
-                          className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                          aria-label="Remove floor plan"
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {floorPlanUrls.map((url, i) => {
+                      const isPdf = url.toLowerCase().split("?")[0].endsWith(".pdf");
+                      return (
+                        <div
+                          key={url}
+                          className="group relative h-20 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
                         >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          {isPdf ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-700"
+                            >
+                              <FileText className="h-6 w-6" />
+                              <span className="text-[10px] font-medium">PDF</span>
+                            </a>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={url} alt={`Floor plan ${i + 1}`} className="h-full w-full object-cover" />
+                          )}
+                          <span className="absolute bottom-0.5 left-0.5 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium text-white">
+                            {i + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFloorPlanUrls((g) => g.filter((_, j) => j !== i))
+                            }
+                            className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                            aria-label="Remove floor plan"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </Field>
             )}
@@ -1450,6 +1493,7 @@ export default function PropertyForm({
         <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
           <button
             type="button"
+            data-testid="form-prev"
             onClick={prev}
             disabled={step === 0}
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
@@ -1460,6 +1504,7 @@ export default function PropertyForm({
           {step < steps.length - 1 ? (
             <button
               type="button"
+              data-testid="form-next"
               onClick={next}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
@@ -1468,6 +1513,7 @@ export default function PropertyForm({
           ) : (
             <button
               type="button"
+              data-testid="form-submit"
               onClick={submit}
               disabled={saving || uploading}
               className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
@@ -1590,8 +1636,12 @@ function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  // Stable, label-derived hook for E2E tests, e.g. "Property Type" -> field-property-type.
+  const testId =
+    "field-" +
+    label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return (
-    <label className="block">
+    <label className="block" data-testid={testId}>
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
         {label} {required && <span className="text-red-500">*</span>}
       </span>

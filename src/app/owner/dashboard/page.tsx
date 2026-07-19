@@ -8,6 +8,7 @@ import PropertyDashboard from "@/components/dashboard/PropertyDashboard";
 import { Lead } from "@/types/lead";
 
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
 
 export default async function OwnerDashboardPage() {
   const supabase = await createClient();

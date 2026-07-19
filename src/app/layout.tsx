@@ -3,6 +3,12 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FloatingActions from "@/components/layout/FloatingActions";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  organizationJsonLd,
+} from "@/lib/seo";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -18,9 +24,31 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "All New Launches — Premium Properties in India",
-  description:
-    "Your trusted channel partner for premium residential and commercial properties in India. Expert guidance and RERA-verified projects.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "All New Launches — Premium Properties in India",
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: "All New Launches — Premium Properties in India",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "All New Launches — Premium Properties in India",
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +62,12 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-surface text-on-surface">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd()),
+          }}
+        />
         <Navbar />
         <main className="flex min-h-screen flex-col pt-18">{children}</main>
         <Footer />
