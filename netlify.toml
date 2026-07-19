@@ -11,3 +11,11 @@
   # Match the local toolchain (Node 22). Do NOT put secrets here — this file is
   # committed to Git. App env vars go in Netlify's dashboard.
   NODE_VERSION = "22"
+
+  # These two are PUBLIC by design and are expected in the build output, so the
+  # secrets scanner should ignore them:
+  #  - NEXT_PUBLIC_R2_PUBLIC_URL: NEXT_PUBLIC_* is compiled into the client
+  #    bundle; it's the base URL every <img> points to.
+  #  - RAZORPAY_KEY_ID: Razorpay's publishable key (used in checkout). The real
+  #    secret is RAZORPAY_KEY_SECRET, which is NOT listed here and stays private.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_R2_PUBLIC_URL,RAZORPAY_KEY_ID"
