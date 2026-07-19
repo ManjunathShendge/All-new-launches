@@ -12,10 +12,10 @@
   # committed to Git. App env vars go in Netlify's dashboard.
   NODE_VERSION = "22"
 
-  # These two are PUBLIC by design and are expected in the build output, so the
-  # secrets scanner should ignore them:
-  #  - NEXT_PUBLIC_R2_PUBLIC_URL: NEXT_PUBLIC_* is compiled into the client
-  #    bundle; it's the base URL every <img> points to.
-  #  - RAZORPAY_KEY_ID: Razorpay's publishable key (used in checkout). The real
-  #    secret is RAZORPAY_KEY_SECRET, which is NOT listed here and stays private.
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_R2_PUBLIC_URL,RAZORPAY_KEY_ID"
+  # These keys are PUBLIC by design and are inlined into the client bundle, so
+  # the secrets scanner is expected to see them in the build output. Every
+  # NEXT_PUBLIC_* var is browser-exposed by definition; the Razorpay KEY_ID is a
+  # publishable key. The TRULY secret vars (SUPABASE_SERVICE_ROLE_KEY,
+  # R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RAZORPAY_KEY_SECRET,
+  # CLOUDFLARE_ACCOUNT_ID) are intentionally NOT listed and remain scanned.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_R2_PUBLIC_URL,RAZORPAY_KEY_ID,NEXT_PUBLIC_RAZORPAY_KEY_ID,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
