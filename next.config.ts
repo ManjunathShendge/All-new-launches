@@ -63,8 +63,13 @@ const csp = [
   `connect-src ${connectSrc}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests",
-].join("; ");
+  // Force HTTPS in production only. On the local http dev server this would
+  // upgrade same-origin server-action POSTs to https://localhost (no TLS there)
+  // and the browser cancels them — breaking every form submit locally.
+  isDev ? "" : "upgrade-insecure-requests",
+]
+  .filter(Boolean)
+  .join("; ");
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },

@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { PropertyFilter } from "@/types/property-filter";
 import {
@@ -21,11 +22,12 @@ const HIDDEN_PUBLIC_STATUSES = "(pending,rejected)";
 
 export class PropertyRepository {
   private async withImages(
-    rows: Record<string, unknown>[]
+    rows: Record<string, unknown>[],
+    client?: SupabaseClient
   ): Promise<PropertyCard[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id as number);
-    const imageMap = await imageRepository.getPrimaryImageMap(ids);
+    const imageMap = await imageRepository.getPrimaryImageMap(ids, client);
     return rows.map((row) =>
       mapPropertyCard(row, imageMap.get(row.id as number) ?? null)
     );
@@ -87,8 +89,8 @@ export class PropertyRepository {
     }
   }
 
-  async getLatest(limit = 10) {
-    const supabase = await createClient();
+  async getLatest(limit = 10, client?: SupabaseClient) {
+    const supabase = client ?? (await createClient());
 
     const { data, error } = await supabase
       .from("properties")
@@ -99,11 +101,11 @@ export class PropertyRepository {
 
     if (error) throw new Error(error.message);
 
-    return this.withImages(data ?? []);
+    return this.withImages(data ?? [], client);
   }
 
-  async getFeatured(limit = 6) {
-    const supabase = await createClient();
+  async getFeatured(limit = 6, client?: SupabaseClient) {
+    const supabase = client ?? (await createClient());
 
     const { data, error } = await supabase
       .from("properties")
@@ -115,7 +117,7 @@ export class PropertyRepository {
 
     if (error) throw new Error(error.message);
 
-    return this.withImages(data ?? []);
+    return this.withImages(data ?? [], client);
   }
 
   async getRelated(
@@ -316,8 +318,11 @@ export class PropertyRepository {
    * Trending localities computed in Postgres (see sql/2026-07-trending-locations.sql):
    * localities with the most active listings, plus their city + average price.
    */
-  async getTrendingLocations(limit = 6): Promise<TrendingLocation[]> {
-    const supabase = await createClient();
+  async getTrendingLocations(
+    limit = 6,
+    client?: SupabaseClient
+  ): Promise<TrendingLocation[]> {
+    const supabase = client ?? (await createClient());
     const { data, error } = await supabase.rpc("trending_locations", {
       p_limit: limit,
     });

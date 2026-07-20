@@ -12,25 +12,15 @@ import ScalableWallOfLove from "./testimonial";
 import HomeBlogSection from "../blog/HomeBlogSection";
 import PropertyCTASection from "./LeadCapture";
 import FAQSection from "./faq";
-import { propertyApi } from "@/lib/api/property.api";
-import { getActiveShowcase } from "@/lib/actions/premium-showcase.action";
-import { getTrendingLocations } from "@/lib/actions/trending.action";
+import { getHomeData } from "@/lib/data/home.data";
 
 
 export default async function HomeSection() {
-  // Degrade gracefully — a transient Supabase read (e.g. token/clock skew)
-  // should show empty sections, not crash the whole home page.
-  const [featuredRes, latestRes, showcaseRes, trendingRes] =
-    await Promise.allSettled([
-      propertyApi.getFeaturedProperties(4),
-      propertyApi.getLatestProperties(8),
-      getActiveShowcase(),
-      getTrendingLocations(6),
-    ]);
-  const featured = featuredRes.status === "fulfilled" ? featuredRes.value : [];
-  const latest = latestRes.status === "fulfilled" ? latestRes.value : [];
-  const showcase = showcaseRes.status === "fulfilled" ? showcaseRes.value : [];
-  const trending = trendingRes.status === "fulfilled" ? trendingRes.value : [];
+  // All reads go through a cookie-free client (see home.data.ts) so this page
+  // can be ISR-cached instead of dynamically rendered on every request. Each
+  // read degrades to empty on failure, so a transient blip shows empty
+  // sections, not a crash.
+  const { featured, latest, showcase, trending } = await getHomeData();
 
   return (
     <main>

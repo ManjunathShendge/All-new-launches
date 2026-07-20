@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { mapPropertyImage } from "@/lib/mappers/image.mapper";
 
@@ -32,10 +33,13 @@ export class ImageRepository {
    * Get primary image URLs for multiple properties in one query.
    * Returns a Map of property_id → image_url.
    */
-  async getPrimaryImageMap(propertyIds: number[]): Promise<Map<number, string>> {
+  async getPrimaryImageMap(
+    propertyIds: number[],
+    client?: SupabaseClient
+  ): Promise<Map<number, string>> {
     if (propertyIds.length === 0) return new Map();
 
-    const supabase = await createClient();
+    const supabase = client ?? (await createClient());
 
     const { data, error } = await supabase
       .from("property_images")

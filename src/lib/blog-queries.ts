@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public-client";
 import { BlogCardData, BlogPost } from "@/types/blog";
 
 const CARD_FIELDS =
@@ -9,7 +10,9 @@ const CARD_FIELDS =
  * Featured posts are prioritized first, then most recent.
  */
 export async function getFeaturedBlogPosts(limit = 4): Promise<BlogCardData[]> {
-  const supabase = await createClient();
+  // Cookie-free client: published posts are fully public, and this runs in the
+  // ISR-cached home page — a cookie read here would force dynamic rendering.
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from("blog_posts")
