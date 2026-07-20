@@ -61,6 +61,22 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
+      <head>
+        {/* Preconnect to the origins that serve above-the-fold images so the
+            browser can open those connections before it discovers the <img>s.
+            (Lighthouse: "no origins were preconnected".) */}
+        <link
+          rel="preconnect"
+          href="https://pub-f48d1b7dfc8543aab0a9d94ee62c5d69.r2.dev"
+          crossOrigin=""
+        />
+        <link rel="preconnect" href="https://allnewlaunches.com" />
+        <link
+          rel="preconnect"
+          href="https://images.unsplash.com"
+          crossOrigin=""
+        />
+      </head>
       <body className="min-h-full bg-surface text-on-surface">
         <script
           type="application/ld+json"
