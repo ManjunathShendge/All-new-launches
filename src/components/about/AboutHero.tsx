@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Star, TrendingUp, ArrowRight } from "lucide-react";
+import { ArrowUpRight, Star, TrendingUp } from "lucide-react";
 
 export default function AboutPremiumLayout() {
   return (
@@ -41,15 +41,6 @@ export default function AboutPremiumLayout() {
             >
               Contact Me
               <ArrowUpRight className="w-5 h-5" />
-            </motion.button>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02, backgroundColor: "#f0edef" }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-transparent border border-[#c6c6cd] text-[#1b1b1d] px-8 py-4 rounded-lg font-semibold text-base flex items-center gap-2 transition-colors"
-            >
-              View Portfolio
-              <ArrowRight className="w-5 h-5" />
             </motion.button>
           </div>
         </motion.div>

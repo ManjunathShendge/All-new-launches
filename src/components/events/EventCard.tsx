@@ -96,8 +96,12 @@ export default function EventCard({ event }: { event: EventCardType }) {
           <div className="mt-4 text-xs text-slate-400">Open registration</div>
         )}
 
+        {/* Spacer pushes the CTA to the bottom so buttons line up across cards
+            of differing content height, keeping a minimum gap above. */}
+        <div className="mt-4 grow" />
+
         {/* CTA — the whole card links to the event, this reinforces the action */}
-        <span className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-blue-700">
+        <span className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-blue-700">
           {full ? "Join waitlist" : "Register now"}
           <ArrowRight className="h-4 w-4" />
         </span>
