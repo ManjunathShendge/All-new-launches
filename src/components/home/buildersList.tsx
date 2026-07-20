@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Info
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 const BUILDERS = [
@@ -232,10 +233,12 @@ export default function PremiumBuildersImageCarousel() {
                 >
                   {/* Background Image Accent */}
                   <div className="absolute inset-0 z-0">
-                    <img 
-                      src={builder.bgImage} 
-                      alt={builder.name} 
-                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    <Image
+                      src={builder.bgImage}
+                      alt={builder.name}
+                      fill
+                      sizes="340px"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                     {/* Multi-layered gradient for optimal bottom text contrast */}
                     <div className="absolute inset-0 bg-linear-to-b from-black/10 via-black/40 to-black/90" />

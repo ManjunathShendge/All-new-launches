@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useTransform } from "motion/react";
 import { MapPin, ArrowRight, Flame, Heart } from "lucide-react";
 import { useSectionScroll } from "@/components/ui/useSectionScroll";
@@ -119,15 +120,12 @@ hover:shadow-[0_20px_45px_rgba(15,23,42,0.10),0_35px_80px_rgba(15,23,42,0.08)]
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
-                <motion.img
+                <Image
                   src={image}
                   alt={item.title}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{
-                    duration: 0.5,
-                    ease: "easeOut",
-                  }}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                 />
 
                 {/* Badge */}

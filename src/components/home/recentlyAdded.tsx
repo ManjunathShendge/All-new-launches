@@ -3,6 +3,7 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MapPin,
   Heart,
@@ -168,10 +169,12 @@ export default function RecentlyAddedProperties({
 
                   {/* Image Container */}
                   <div className="relative h-48 overflow-hidden bg-(--surface-container-high)">
-                    <motion.img
+                    <Image
                       src={image}
                       alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
                     {/* Featured Badge */}

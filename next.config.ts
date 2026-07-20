@@ -92,6 +92,10 @@ const nextConfig: NextConfig = {
       // Cloudflare R2 public delivery.
       { protocol: "https", hostname: "*.r2.dev" },
       ...(r2Host ? [{ protocol: "https" as const, hostname: r2Host }] : []),
+      // Legacy WordPress media (the bulk of property images) + Unsplash demo art.
+      { protocol: "https", hostname: "allnewlaunches.com" },
+      { protocol: "https", hostname: "www.allnewlaunches.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 
