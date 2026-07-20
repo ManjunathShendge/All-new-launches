@@ -8,7 +8,7 @@ import { ChevronDown, MessageSquare, HelpCircle } from "lucide-react";
 // Mock data based on the screenshot
 const faqs = [
   {
-    question: "How do I search for properties on PropFind?",
+    question: "How do I search for properties on All New Launches?",
     answer: "You can easily search by entering your desired location, property type, and budget in the main search bar on our homepage. Use our advanced filters to narrow down by amenities, size, and more.",
   },
   {
@@ -24,12 +24,12 @@ const faqs = [
     answer: "We partner with top financial institutions. You can check your eligibility and apply directly through our platform once you've shortlisted a property.",
   },
   {
-    question: "Can I schedule a site visit through PropFind?",
+    question: "Can I schedule a site visit through All New Launches?",
     answer: "Absolutely! Just click the 'Schedule Visit' button on any property page to choose a convenient date and time. The agent or owner will confirm your appointment.",
   },
   {
-    question: "What are the fees for buying/selling through PropFind?",
-    answer: "PropFind does not charge any brokerage fees for standard interactions. Fees may apply only if you opt for our dedicated premium concierge or legal assistance services.",
+    question: "What are the fees for buying/selling through All New Launches?",
+    answer: "All New Launches does not charge any brokerage fees for standard interactions. Fees may apply only if you opt for our dedicated premium concierge or legal assistance services.",
   },
 ];
 

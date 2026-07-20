@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { createClient } from "@/lib/supabase/server";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { eventRepository } from "@/lib/supabase/event.repository";
@@ -67,7 +68,7 @@ export async function createEvent(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to create event.",
+      error: getUserErrorMessage(e, "Failed to create event."),
     };
   }
 }
@@ -88,7 +89,7 @@ export async function updateEvent(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to update event.",
+      error: getUserErrorMessage(e, "Failed to update event."),
     };
   }
 }
@@ -107,7 +108,7 @@ export async function setEventStatus(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to update status.",
+      error: getUserErrorMessage(e, "Failed to update status."),
     };
   }
 }
@@ -123,7 +124,7 @@ export async function deleteEvent(id: number): Promise<EventMutationResult> {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to delete event.",
+      error: getUserErrorMessage(e, "Failed to delete event."),
     };
   }
 }

@@ -14,6 +14,7 @@ import {
   PurchasedLead,
   WalletTx,
 } from "@/types/marketplace";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 // Hard cap on ids accepted from the client in one call (defence-in-depth; the
 // SQL function also caps at 5000).
@@ -157,7 +158,7 @@ export async function updateLeadStatus(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to update.",
+      error: getUserErrorMessage(e, "Failed to update."),
     };
   }
 }

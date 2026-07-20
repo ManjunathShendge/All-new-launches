@@ -13,6 +13,7 @@ import {
   IndianRupee,
   Ruler,
   Building2,
+  BedDouble,
   SlidersHorizontal,
   FileText,
   Upload,
@@ -21,6 +22,7 @@ import type { Purpose, Category } from "@/lib/dashboard/wizard.config";
 import { PURPOSE_LABEL, CATEGORY_LABEL } from "@/lib/dashboard/wizard.config";
 import { compressImage, uploadFileToR2 } from "@/lib/r2/upload";
 import { createProperty } from "@/lib/actions/property-create.action";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import Select from "@/components/ui/Select";
 import Link from "next/link";
 
@@ -249,6 +251,7 @@ type FormState = {
   maxArea: string;
   pricePerSqft: string;
   propertyTypes: string[];
+  configurations: string[];
   parkingSpaces: string;
   extraParkingOnRequest: boolean;
   facingsAvailable: string[];
@@ -316,6 +319,7 @@ const INITIAL: FormState = {
   maxArea: "",
   pricePerSqft: "",
   propertyTypes: [],
+  configurations: [],
   parkingSpaces: "",
   extraParkingOnRequest: false,
   facingsAvailable: [],
@@ -407,7 +411,7 @@ export default function PropertyForm({
         setGalleryUrls((g) => [...g, url]);
       }
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Upload failed.");
+      setUploadError(getUserErrorMessage(e, "Upload failed."));
     } finally {
       setUploading(false);
     }
@@ -425,7 +429,7 @@ export default function PropertyForm({
         setFloorPlanUrls((g) => [...g, url]);
       }
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Upload failed.");
+      setUploadError(getUserErrorMessage(e, "Upload failed."));
     } finally {
       setUploading(false);
     }
@@ -438,7 +442,7 @@ export default function PropertyForm({
     try {
       setUploadedVideoUrl(await uploadFileToR2(file));
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Upload failed.");
+      setUploadError(getUserErrorMessage(e, "Upload failed."));
     } finally {
       setUploading(false);
     }
@@ -502,6 +506,14 @@ export default function PropertyForm({
       propertyTypes: f.propertyTypes.includes(t)
         ? f.propertyTypes.filter((x) => x !== t)
         : [...f.propertyTypes, t],
+    }));
+
+  const toggleConfiguration = (t: string) =>
+    setForm((f) => ({
+      ...f,
+      configurations: f.configurations.includes(t)
+        ? f.configurations.filter((x) => x !== t)
+        : [...f.configurations, t],
     }));
 
   const toggleFacing = (t: string) =>
@@ -842,6 +854,26 @@ export default function PropertyForm({
                     ))}
                   </div>
                 </SubSection>
+
+                {/* Configurations available (multi) — residential projects */}
+                {isResidential && (
+                  <SubSection
+                    icon={<BedDouble className="h-4 w-4 text-blue-600" />}
+                    title="Configurations Available"
+                    desc="Select every BHK configuration offered in this project."
+                  >
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                      {BHK.map((b) => (
+                        <BoxedCheck
+                          key={b}
+                          label={`${b} BHK`}
+                          checked={form.configurations.includes(b)}
+                          onChange={() => toggleConfiguration(b)}
+                        />
+                      ))}
+                    </div>
+                  </SubSection>
+                )}
 
                 {/* Additional details */}
                 <SubSection

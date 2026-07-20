@@ -3,9 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useTransform } from "motion/react";
-import { MapPin, ArrowRight, Flame, Heart } from "lucide-react";
+import { MapPin, ArrowRight, Flame } from "lucide-react";
 import { useSectionScroll } from "@/components/ui/useSectionScroll";
-import { useState } from "react";
+import SaveButton from "@/components/properties/SaveButton";
 import { PropertyCard } from "@/types/property-card";
 import { formatPrice, formatConfiguration, formatPossession } from "@/lib/format";
 
@@ -26,7 +26,6 @@ export default function FeaturedLaunches({
   properties?: PropertyCard[];
 }) {
   const { ref, scrollYProgress } = useSectionScroll();
-  const [wishlist, setWishlist] = useState<string[]>([]);
 
   if (properties.length === 0) return null;
 
@@ -135,42 +134,10 @@ hover:shadow-[0_20px_45px_rgba(15,23,42,0.10),0_35px_80px_rgba(15,23,42,0.08)]
                   {badge.label}
                 </span>
 
-                {/* Wishlist */}
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() =>
-                    setWishlist((prev) =>
-                      prev.includes(item.slug)
-                        ? prev.filter((x) => x !== item.slug)
-                        : [...prev, item.slug],
-                    )
-                  }
-                  className="
-      absolute
-      right-3
-      top-3
-      flex
-      h-10
-      w-10
-      items-center
-      justify-center
-      rounded-full
-      bg-white
-      opacity-0
-      transition-all
-      duration-300
-      group-hover:opacity-100
-    "
-                >
-                  <Heart
-                    size={18}
-                    className={`transition-all duration-300 ${
-                      wishlist.includes(item.slug)
-                        ? "fill-red-500 text-red-500"
-                        : "text-red-500"
-                    }`}
-                  />
-                </motion.button>
+                {/* Wishlist (DB-backed save) */}
+                <div className="absolute right-3 top-3 z-10 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                  <SaveButton propertyId={item.id} />
+                </div>
 
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/20 to-transparent" />
               </div>

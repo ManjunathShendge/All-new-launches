@@ -7,6 +7,7 @@ import { marketplaceRepository } from "@/lib/supabase/marketplace.repository";
 import { walletRepository } from "@/lib/supabase/wallet.repository";
 import { ListableLead, MarketplaceInsights } from "@/types/marketplace";
 import { notifyUser } from "@/lib/notify";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 export interface AdminResult {
   success: boolean;
@@ -58,7 +59,7 @@ export async function listLeadForSale(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to list lead.",
+      error: getUserErrorMessage(e, "Failed to list lead."),
     };
   }
 }
@@ -80,7 +81,7 @@ export async function listAllLeads(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to list leads.",
+      error: getUserErrorMessage(e, "Failed to list leads."),
     };
   }
 }
@@ -102,7 +103,7 @@ export async function setPriceForAllLeads(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to set prices.",
+      error: getUserErrorMessage(e, "Failed to set prices."),
     };
   }
 }
@@ -119,7 +120,7 @@ export async function unlistLead(leadId: number): Promise<AdminResult> {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to unlist.",
+      error: getUserErrorMessage(e, "Failed to unlist."),
     };
   }
 }
@@ -151,7 +152,7 @@ export async function grantCredits(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to grant credits.",
+      error: getUserErrorMessage(e, "Failed to grant credits."),
     };
   }
 }

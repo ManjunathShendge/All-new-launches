@@ -9,6 +9,8 @@ import {
   Store,
   Crown,
   Mail,
+  Users2,
+  History,
   PanelLeftClose,
   PanelLeft,
   type LucideIcon,
@@ -19,10 +21,14 @@ import AdminEvents from "./AdminEvents";
 import AdminMarketplace from "./AdminMarketplace";
 import AdminPremiumShowcase from "./AdminPremiumShowcase";
 import AdminEnquiries from "./AdminEnquiries";
+import AdminUsers from "./AdminUsers";
+import AdminActivity from "./AdminActivity";
 import AdminInsights, { type PropertyStats } from "./AdminInsights";
 import type { Lead } from "@/types/lead";
 import type { AssignableAgent } from "@/lib/supabase/lead.repository";
 import type { AdminPropertyPage } from "@/lib/admin/admin-queries";
+import type { AdminUserPage, UserStats } from "@/lib/admin/user-queries";
+import type { ActivityItem } from "@/lib/admin/activity-queries";
 
 type SectionId =
   | "leads"
@@ -31,6 +37,8 @@ type SectionId =
   | "events"
   | "marketplace"
   | "enquiries"
+  | "users"
+  | "activity"
   | "insights";
 
 const NAV: { id: SectionId; label: string; icon: LucideIcon }[] = [
@@ -40,6 +48,8 @@ const NAV: { id: SectionId; label: string; icon: LucideIcon }[] = [
   { id: "events", label: "Events", icon: CalendarDays },
   { id: "marketplace", label: "Marketplace Leads", icon: Store },
   { id: "enquiries", label: "Enquiries", icon: Mail },
+  { id: "users", label: "Users", icon: Users2 },
+  { id: "activity", label: "Activity", icon: History },
   { id: "insights", label: "Insights", icon: BarChart3 },
 ];
 
@@ -48,11 +58,19 @@ export default function AdminShell({
   agents,
   properties,
   propertyStats,
+  users,
+  userStats,
+  currentUserId,
+  activity,
 }: {
   leads: Lead[];
   agents: AssignableAgent[];
   properties: AdminPropertyPage;
   propertyStats: PropertyStats;
+  users: AdminUserPage;
+  userStats: UserStats;
+  currentUserId: string;
+  activity: ActivityItem[];
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [active, setActive] = useState<SectionId>("leads");
@@ -181,6 +199,14 @@ export default function AdminShell({
         {active === "events" && <AdminEvents />}
         {active === "marketplace" && <AdminMarketplace />}
         {active === "enquiries" && <AdminEnquiries />}
+        {active === "users" && (
+          <AdminUsers
+            initial={users}
+            initialStats={userStats}
+            currentUserId={currentUserId}
+          />
+        )}
+        {active === "activity" && <AdminActivity initial={activity} />}
         {active === "insights" && (
           <AdminInsights
             leads={leads}

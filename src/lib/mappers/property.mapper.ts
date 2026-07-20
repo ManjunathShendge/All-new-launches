@@ -130,6 +130,27 @@ function toNullableInt(val: any): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+const truthy = (val: any): boolean => val === 1 || val === true || val === "1";
+
+/** extra_attributes is jsonb — may arrive as an object or a JSON string. */
+function parseExtra(val: any): Record<string, any> {
+  if (!val) return {};
+  if (typeof val === "object") return val;
+  try {
+    const p = JSON.parse(val);
+    return p && typeof p === "object" ? p : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Humanise a stored code like "0_1_years" -> "0 1 Years". */
+function humanizeCode(val: any): string | null {
+  const s = (val ?? "").toString().trim();
+  if (!s) return null;
+  return titleCase(s.replace(/_/g, " "));
+}
+
 export function mapPropertyDetail(
   row: any,
   gallery: PropertyImage[],
@@ -141,6 +162,7 @@ export function mapPropertyDetail(
     gallery.find((g) => g.isPrimary)?.imageUrl ?? gallery[0]?.imageUrl ?? null;
 
   const card = mapPropertyCard(row, primary);
+  const extra = parseExtra(row.extra_attributes);
 
   return {
     ...card,
@@ -163,6 +185,10 @@ export function mapPropertyDetail(
 
     pricePerSqft: toPositiveFloat(row.price_per_sqft),
 
+    isNegotiable: truthy(row.is_negotiable),
+    securityDeposit: toPositiveFloat(row.security_deposit),
+    monthlyRent: toPositiveFloat(row.monthly_rent ?? row.rent_amount),
+
     carpetArea: toPositiveFloat(row.carpet_area),
     superBuiltupArea: toPositiveFloat(
       row.super_builtup_area ?? row.super_built_up_area
@@ -182,6 +208,9 @@ export function mapPropertyDetail(
       : null,
     furnishing: row.furnishing_status ? titleCase(row.furnishing_status) : null,
     ownershipType: row.ownership_type ? titleCase(row.ownership_type) : null,
+    propertyAge: humanizeCode(row.property_age),
+    ocReceived: truthy(row.occupancy_certificate),
+    availableFrom: row.available_from ?? null,
 
     virtualTourUrl: row.virtual_tour_url || null,
 
@@ -203,6 +232,18 @@ export function mapPropertyDetail(
       .filter(Boolean),
 
     amenityLabels: parseAmenities(row.amenities),
+
+    extraParkingOnRequest: truthy(extra.extraParkingOnRequest),
+    shopFrontage: extra.shopFrontage ? String(extra.shopFrontage) : null,
+    ceilingHeight: extra.ceilingHeight ? String(extra.ceilingHeight) : null,
+    washroom: extra.washroom ? String(extra.washroom) : null,
+    hasMezzanine: truthy(extra.hasMezzanine),
+    mezzanineArea: extra.mezzanineArea ? String(extra.mezzanineArea) : null,
+    mainRoadFacing: truthy(extra.mainRoadFacing),
+    cornerShop: truthy(extra.cornerShop),
+    suitableFor: Array.isArray(extra.suitableFor)
+      ? extra.suitableFor.map((s: any) => String(s)).filter(Boolean)
+      : [],
 
     gallery,
     floorPlans,

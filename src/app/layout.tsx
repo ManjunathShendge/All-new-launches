@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FloatingActions from "@/components/layout/FloatingActions";
+import CompareTray from "@/components/properties/CompareTray";
 import {
   SITE_URL,
   SITE_NAME,
@@ -59,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} h-full scroll-smooth antialiased`}
     >
       <head>
         {/* Preconnect to the origins that serve above-the-fold images so the
@@ -88,6 +89,7 @@ export default function RootLayout({
         <main className="flex min-h-screen flex-col pt-18">{children}</main>
         <Footer />
         <FloatingActions />
+        <CompareTray />
       </body>
     </html>
   );

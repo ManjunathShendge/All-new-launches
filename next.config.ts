@@ -112,6 +112,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  async redirects() {
+    return [
+      // Services page is hidden for now — send any hit to the home page with a
+      // real (temporary) server redirect. Restore the route to bring it back.
+      { source: "/services", destination: "/", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

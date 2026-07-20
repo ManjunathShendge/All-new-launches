@@ -40,17 +40,18 @@ export async function generateMetadata({
 
   const url = `${SITE_URL}/blog/${post.slug}`;
   const images = post.cover_image ? [post.cover_image] : undefined;
+  const description = deriveDescription(post.excerpt, post.content);
 
   return {
     title: `${post.title} | All New Launches Blog`,
-    description: post.excerpt ?? undefined,
+    description,
     keywords: [post.category, "real estate", "property", "India"],
     alternates: { canonical: url },
     openGraph: {
       type: "article",
       url,
       title: post.title,
-      description: post.excerpt ?? undefined,
+      description,
       images,
       publishedTime: post.published_at ?? undefined,
       authors: post.author_name ? [post.author_name] : undefined,
@@ -59,10 +60,31 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description: post.excerpt ?? undefined,
+      description,
       images,
     },
   };
+}
+
+/**
+ * A meta description for every post: use the hand-written excerpt when present,
+ * otherwise auto-generate one from the article body (HTML stripped, ~155 chars)
+ * so no blog is ever published without a description.
+ */
+function deriveDescription(
+  excerpt: string | null,
+  content: string | null
+): string | undefined {
+  const clean = excerpt?.trim();
+  if (clean) return clean;
+
+  const text = (content ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return undefined;
+  return text.length > 155 ? `${text.slice(0, 152).trimEnd()}…` : text;
 }
 
 function formatDate(dateString: string | null) {
@@ -93,7 +115,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
-    description: post.excerpt ?? undefined,
+    description: deriveDescription(post.excerpt, post.content),
     image: post.cover_image ? [post.cover_image] : undefined,
     datePublished: post.published_at ?? undefined,
     dateModified: post.published_at ?? undefined,
@@ -120,7 +142,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="mx-auto max-w-6xl px-5 pt-10 pb-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 pt-10 pb-6 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
@@ -218,16 +240,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
             )}
 
             <div
-              className="prose prose-slate max-w-none
-                prose-headings:font-['Plus_Jakarta_Sans'] prose-headings:scroll-mt-28 prose-headings:text-[#0F172A]
-                prose-h2:mt-12 prose-h2:mb-4 prose-h2:text-2xl prose-h2:font-bold prose-h2:leading-snug
-                prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-xl prose-h3:font-bold
-                prose-p:leading-[1.85] prose-p:text-[#334155]
-                prose-li:text-[#334155] prose-li:marker:text-blue-500
-                prose-a:font-medium prose-a:text-[#2563EB] prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-[#0F172A] prose-strong:font-semibold
-                prose-img:rounded-2xl prose-img:shadow-sm
-                prose-blockquote:rounded-r-lg prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-slate-50 prose-blockquote:px-5 prose-blockquote:py-1 prose-blockquote:not-italic prose-blockquote:text-slate-700"
+              className="blog-prose max-w-none"
               dangerouslySetInnerHTML={{ __html: html }}
             />
 

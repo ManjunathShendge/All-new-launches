@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { notificationRepository } from "@/lib/supabase/notification.repository";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 const ALLOWED = ["new", "contacted", "closed", "lost"];
 
@@ -44,7 +45,8 @@ export async function setMyLeadStatus(
 
   const wasContacted = (lead.status as string | null) === "contacted";
   const { error } = await db.from("leads").update({ status }).eq("id", leadId);
-  if (error) return { ok: false, error: error.message };
+  if (error)
+    return { ok: false, error: getUserErrorMessage(error, "Could not update the lead.") };
 
   // Notify the enquirer the first time it becomes "contacted".
   if (status === "contacted" && !wasContacted) {

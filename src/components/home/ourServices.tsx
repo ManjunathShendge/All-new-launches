@@ -9,7 +9,7 @@ import {
   Paintbrush,
   Scale,
   Check,
-  ArrowRight,
+  Phone,
   Sparkles,
 } from "lucide-react";
 
@@ -125,13 +125,15 @@ export default function OurServicesPremium() {
 
               {/* Master Call to Action */}
               <div className="hidden lg:block">
-                <motion.button
+                <motion.a
+                  href="tel:+919118404041"
                   whileHover={{ scale: 1.02, backgroundColor: "#003ea8" }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[#0051d5] px-8 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(0,81,213,0.25)] transition-colors duration-200"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#0051d5] px-8 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(0,81,213,0.25)] transition-colors duration-200"
                 >
-                  Schedule a Consultation
-                </motion.button>
+                  <Phone size={16} />
+                  Contact at +91 91184 04041
+                </motion.a>
               </div>
             </div>
           </motion.div>
@@ -156,12 +158,14 @@ export default function OurServicesPremium() {
           transition={{ duration: 0.5 }}
           className="mt-8 lg:hidden"
         >
-          <motion.button
+          <motion.a
+            href="tel:+919118404041"
             whileTap={{ scale: 0.98 }}
-            className="flex h-12 w-full items-center justify-center rounded-full bg-[#0051d5] px-8 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(0,81,213,0.25)] transition-colors duration-200"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#0051d5] px-8 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(0,81,213,0.25)] transition-colors duration-200"
           >
-            Schedule a Consultation
-          </motion.button>
+            <Phone size={16} />
+            Contact at +91 91184 04041
+          </motion.a>
         </motion.div>
       </div>
     </section>
@@ -227,24 +231,6 @@ function ServiceCard({
         </ul>
       </div>
 
-      {/* Interactive Action Footer */}
-      <div className="mt-auto border-t border-[#f0edef] pt-5">
-        <a
-          href={`#${service.id}`}
-          className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#0051d5] focus:outline-none"
-        >
-          Learn More
-          <motion.div
-            variants={{
-              rest: { x: 0 },
-              hover: { x: 4 },
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          >
-            <ArrowRight size={16} />
-          </motion.div>
-        </a>
-      </div>
     </motion.div>
   );
 }

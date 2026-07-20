@@ -11,10 +11,6 @@ import {
   CheckCircle2,
   Download,
   CalendarCheck,
-  Heart,
-  ArrowLeftRight,
-  Share2,
-  Printer,
   ShieldCheck,
   Ruler,
   CalendarClock,
@@ -40,6 +36,7 @@ import ReadMore from "@/components/properties/detail/ReadMore";
 import SimilarCarousel from "@/components/properties/detail/SimilarCarousel";
 import RecentlyViewedTracker from "@/components/properties/RecentlyViewedTracker";
 import FloorPlanCarousel from "@/components/properties/detail/FloorPlanCarousel";
+import PropertyActionRow from "@/components/properties/detail/PropertyActionRow";
 import { SITE_URL, SITE_NAME, absoluteUrl } from "@/lib/seo";
 
 // Deterministic pseudo-live stats so each property shows stable, realistic numbers.
@@ -205,10 +202,22 @@ export default async function PropertyDetailPage({
   // land listings each show a clean, relevant set (no rows full of "—").
   const sqft = (n: number | null) =>
     n ? `${n.toLocaleString("en-IN")} sq ft` : null;
+  const rupees = (n: number | null) =>
+    n ? `₹${n.toLocaleString("en-IN")}` : null;
+  const fmtDate = (d: string | null) => {
+    if (!d) return null;
+    const t = new Date(d);
+    return Number.isNaN(t.getTime())
+      ? d
+      : t.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
   const detailRows = (
     [
       { label: "Price Range", value: formatPriceRange(property.minPrice, property.maxPrice) },
       property.pricePerSqft ? { label: "Price per Sq Ft", value: formatPricePerSqft(property.pricePerSqft) } : null,
+      property.monthlyRent ? { label: "Monthly Rent", value: rupees(property.monthlyRent)! } : null,
+      property.securityDeposit ? { label: "Security Deposit", value: rupees(property.securityDeposit)! } : null,
+      property.isNegotiable ? { label: "Price Negotiable", value: "Yes" } : null,
       { label: "Property ID", value: property.propertyCode },
       { label: "Property Type", value: titleCase(property.propertyType) || "—" },
       property.projectName ? { label: "Project", value: property.projectName } : null,
@@ -229,7 +238,25 @@ export default async function PropertyDetailPage({
       property.parking != null ? { label: "Parking", value: String(property.parking) } : null,
       possession && possession !== "N/A" ? { label: "Possession", value: possession } : null,
       property.ownershipType ? { label: "Ownership", value: property.ownershipType } : null,
+      property.propertyAge ? { label: "Age of Property", value: property.propertyAge } : null,
+      property.ocReceived ? { label: "OC Received", value: "Yes" } : null,
+      property.availableFrom ? { label: "Available From", value: fmtDate(property.availableFrom)! } : null,
+      // Shop / industrial / land specifics
+      property.shopFrontage ? { label: "Frontage", value: property.shopFrontage } : null,
+      property.ceilingHeight ? { label: "Ceiling Height", value: property.ceilingHeight } : null,
+      property.washroom ? { label: "Washroom", value: property.washroom } : null,
+      property.hasMezzanine
+        ? { label: "Mezzanine", value: property.mezzanineArea ? `Yes — ${property.mezzanineArea}` : "Yes" }
+        : null,
+      property.mainRoadFacing ? { label: "Main Road Facing", value: "Yes" } : null,
+      property.cornerShop ? { label: "Corner Shop", value: "Yes" } : null,
+      property.extraParkingOnRequest ? { label: "Extra Parking", value: "On request" } : null,
+      property.suitableFor.length
+        ? { label: "Suitable For", value: property.suitableFor.map((s) => titleCase(s)).join(", ") }
+        : null,
       property.reraNumber ? { label: "RERA ID", value: property.reraNumber } : null,
+      property.pincode ? { label: "Pincode", value: property.pincode } : null,
+      property.state ? { label: "State", value: titleCase(property.state) } : null,
       property.landmarks ? { label: "Landmarks", value: property.landmarks } : null,
     ].filter(Boolean) as { label: string; value: string }[]
   );
@@ -565,34 +592,44 @@ export default async function PropertyDetailPage({
 
                 {/* CTAs */}
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button className="flex items-center justify-center gap-2 rounded-lg border border-[#2563EB] px-3 py-2.5 text-sm font-semibold text-[#2563EB] transition hover:bg-[#2563EB]/5">
-                    <Download size={16} />
-                    Brochure
-                  </button>
-                  <button className="flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4ED8]">
+                  {/* Brochure — not available yet; CSS-only "Coming soon" tooltip. */}
+                  <div className="group relative">
+                    <button
+                      type="button"
+                      disabled
+                      aria-label="Brochure — coming soon"
+                      className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-[#2563EB] px-3 py-2.5 text-sm font-semibold text-[#2563EB] opacity-60 transition"
+                    >
+                      <Download size={16} />
+                      Brochure
+                    </button>
+                    <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                      Coming soon
+                      <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                    </span>
+                  </div>
+                  <a
+                    href="#enquiry"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D4ED8]"
+                  >
                     <CalendarCheck size={16} />
                     Schedule Visit
-                  </button>
+                  </a>
                 </div>
 
                 {/* Action row */}
-                <div className="mt-5 grid grid-cols-4 gap-2 border-t border-(--border) pt-5 text-center text-xs text-muted">
-                  {[
-                    { icon: <Heart size={18} />, label: "Shortlist" },
-                    { icon: <ArrowLeftRight size={18} />, label: "Compare" },
-                    { icon: <Share2 size={18} />, label: "Share" },
-                    { icon: <Printer size={18} />, label: "Print" },
-                  ].map((a) => (
-                    <button key={a.label} className="flex flex-col items-center gap-1.5 transition hover:text-[#2563EB]">
-                      {a.icon}
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
+                <PropertyActionRow
+                  propertyId={property.id}
+                  slug={property.slug}
+                  title={property.title}
+                />
               </div>
 
               {/* Contact agent */}
-              <div className="rounded-card border border-(--border) bg-(--surface-container-lowest) p-6">
+              <div
+                id="enquiry"
+                className="scroll-mt-24 rounded-card border border-(--border) bg-(--surface-container-lowest) p-6"
+              >
                 {/* Listing agent header */}
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 text-sm font-bold text-[#2563EB]">

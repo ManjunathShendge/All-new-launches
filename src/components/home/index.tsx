@@ -8,7 +8,6 @@ import TrendingLocations from "./trendingLocations";
 import HighROIInvestmentOpportunities from "./roi";
 import WhyChooseUs from "./whyChooseUs";
 import OurServicesPremium from "./ourServices";
-import ScalableWallOfLove from "./testimonial";
 import HomeBlogSection from "../blog/HomeBlogSection";
 import PropertyCTASection from "./LeadCapture";
 import FAQSection from "./faq";
@@ -34,7 +33,6 @@ export default async function HomeSection() {
       <HighROIInvestmentOpportunities />
       <WhyChooseUs />
       <OurServicesPremium />
-      <ScalableWallOfLove />
       <HomeBlogSection />
       <PropertyCTASection />
       <FAQSection />

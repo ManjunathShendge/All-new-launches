@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { eventService } from "@/lib/services/event.service";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -121,7 +122,7 @@ export async function registerForEvent(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Something went wrong.",
+      error: getUserErrorMessage(err, "Something went wrong."),
     };
   }
 }

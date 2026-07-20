@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import {
   AdminBuyerRollup,
   AdminPurchaseRow,
@@ -37,6 +38,7 @@ interface PropMeta {
   city: string | null;
   locality: string | null;
   propertyType: string | null;
+  propertyCategory: string | null;
   minPrice: number | null;
   maxPrice: number | null;
 }
@@ -48,7 +50,7 @@ export class MarketplaceRepository {
     const db = createServiceRoleClient();
     const { data } = await db
       .from("properties")
-      .select("id, title, slug, city, locality, property_type, min_price, max_price")
+      .select("id, title, slug, city, locality, property_type, property_category, min_price, max_price")
       .in("id", ids);
     for (const r of data ?? []) {
       map.set(r.id as number, {
@@ -57,6 +59,7 @@ export class MarketplaceRepository {
         city: (r.city as string | null) ?? null,
         locality: (r.locality as string | null) ?? null,
         propertyType: (r.property_type as string | null) ?? null,
+        propertyCategory: (r.property_category as string | null) ?? null,
         minPrice: r.min_price != null ? Number(r.min_price) : null,
         maxPrice: r.max_price != null ? Number(r.max_price) : null,
       });
@@ -126,6 +129,7 @@ export class MarketplaceRepository {
         city: m?.city ?? null,
         locality: m?.locality ?? null,
         propertyType: m?.propertyType ?? null,
+        propertyCategory: m?.propertyCategory ?? null,
         minPrice: m?.minPrice ?? null,
         maxPrice: m?.maxPrice ?? null,
         source: ctx?.source ?? null,
@@ -134,32 +138,42 @@ export class MarketplaceRepository {
       };
     });
 
-    // Case-insensitive substring match. `property_type` is stored as free text
-    // (e.g. "Apartment / Flat", "Independent House / Villa", "Office Space"),
-    // so an exact match never works — match on a keyword instead.
+    // Case-insensitive substring match.
     const inc = (v: string | null, q: string) => {
       const needle = q.trim().toLowerCase();
       return needle === "" || (v ?? "").toLowerCase().includes(needle);
     };
-    // One forgiving search box: match city OR locality OR title OR type.
+    // One forgiving search box: match city OR locality OR title OR type/category.
     if (filter.search?.trim())
       cards = cards.filter(
         (c) =>
           inc(c.city, filter.search!) ||
           inc(c.locality, filter.search!) ||
           inc(c.propertyTitle, filter.search!) ||
-          inc(c.propertyType, filter.search!)
+          inc(c.propertyType, filter.search!) ||
+          inc(c.propertyCategory, filter.search!)
       );
     if (filter.city?.trim())
       cards = cards.filter((c) => inc(c.city, filter.city!));
     if (filter.locality?.trim())
       cards = cards.filter((c) => inc(c.locality, filter.locality!));
+    // Type filter matches the populated `property_category` first (residential/
+    // commercial/land), then falls back to the mostly-empty `property_type` and
+    // the title — so it works with the real data instead of silently emptying
+    // the list.
     if (filter.propertyType?.trim())
-      cards = cards.filter((c) => inc(c.propertyType, filter.propertyType!));
+      cards = cards.filter(
+        (c) =>
+          inc(c.propertyCategory, filter.propertyType!) ||
+          inc(c.propertyType, filter.propertyType!) ||
+          inc(c.propertyTitle, filter.propertyType!)
+      );
+    // Min/Max ₹ filter the LEAD price shown in the table (what the buyer pays),
+    // not the underlying property's value.
     if (filter.minPrice != null)
-      cards = cards.filter((c) => (c.maxPrice ?? c.minPrice ?? 0) >= filter.minPrice!);
+      cards = cards.filter((c) => c.price >= filter.minPrice!);
     if (filter.maxPrice != null)
-      cards = cards.filter((c) => (c.minPrice ?? c.maxPrice ?? 0) <= filter.maxPrice!);
+      cards = cards.filter((c) => c.price <= filter.maxPrice!);
 
     switch (filter.sort) {
       case "price_low":
@@ -182,7 +196,7 @@ export class MarketplaceRepository {
       p_buyer: buyerId,
       p_listing: listingId,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: getUserErrorMessage(error) };
     const r = (data ?? {}) as {
       ok: boolean;
       error?: string;
@@ -211,7 +225,7 @@ export class MarketplaceRepository {
       p_buyer: buyerId,
       p_listings: listingIds,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: getUserErrorMessage(error) };
     const r = (data ?? {}) as {
       ok: boolean;
       error?: string;

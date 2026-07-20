@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { leadApi } from "@/lib/api/lead.api";
 import { CreateLeadInput } from "@/types/lead";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { notificationRepository } from "@/lib/supabase/notification.repository";
 
@@ -112,7 +113,6 @@ export async function submitLead(input: CreateLeadInput): Promise<SubmitLeadResu
 
     return { success: true };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Something went wrong.";
-    return { success: false, error: message };
+    return { success: false, error: getUserErrorMessage(err, "Something went wrong.") };
   }
 }

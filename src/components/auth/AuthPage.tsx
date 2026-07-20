@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthController } from "@/lib/controllers/auth.controller";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { checkPasswordStrength } from "@/lib/utils/password-strength";
@@ -144,7 +145,7 @@ export default function AuthPage() {
     setResendingEmail(false);
 
     if (error) {
-      setError(error.message);
+      setError(getUserErrorMessage(error, "Could not send the verification email."));
       return;
     }
 

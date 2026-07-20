@@ -17,6 +17,7 @@ export interface MarketLeadCard {
   city: string | null;
   locality: string | null;
   propertyType: string | null;
+  propertyCategory: string | null;
   minPrice: number | null;
   maxPrice: number | null;
   source: string | null;

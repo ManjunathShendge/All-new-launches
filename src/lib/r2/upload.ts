@@ -6,8 +6,8 @@ import { getR2UploadUrl } from "@/lib/actions/upload.action";
  */
 export async function compressImage(
   file: File,
-  maxDim = 1600,
-  quality = 0.82
+  maxDim = 2000,
+  quality = 0.85
 ): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {

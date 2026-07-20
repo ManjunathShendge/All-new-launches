@@ -18,7 +18,6 @@ const footerSections = [
     title: "Company",
     links: [
       { label: "About", href: "/about" },
-      { label: "Services", href: "/services" },
       { label: "Contact", href: "/contact" },
     ],
   },
@@ -28,16 +27,15 @@ const footerSections = [
       { label: "All Properties", href: "/properties" },
       { label: "Buy", href: "/properties?transactionType=sell" },
       { label: "Rent", href: "/properties?transactionType=rent" },
-      { label: "New Projects", href: "/properties?propertyCategory=new_project" },
+      { label: "New Projects", href: "/upcoming-projects" },
     ],
   },
   {
     title: "Categories",
     links: [
-      { label: "Residential", href: "/residential" },
-      { label: "Commercial", href: "/commercial" },
-      { label: "Industrial", href: "/industrial" },
-      { label: "Land/Plots", href: "/land-plots" },
+      { label: "Residential", href: "/properties?propertyCategory=residential" },
+      { label: "Commercial", href: "/properties?propertyCategory=commercial" },
+      { label: "Land/Plots", href: "/properties?propertyCategory=land" },
     ],
   },
   {

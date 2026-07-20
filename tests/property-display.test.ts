@@ -35,6 +35,18 @@ describe("create -> display round-trip", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("residential project surfaces EVERY selected configuration (not just one)", () => {
+    const d = detail(
+      makeInput({
+        category: "residential",
+        listingType: "project",
+        bedrooms: "",
+        configurations: ["2", "3", "4+"],
+      })
+    );
+    expect(d.configurations).toEqual(["2 BHK", "3 BHK", "4 BHK"]);
+  });
+
   it("commercial office (no BHK) shows NO configurations", () => {
     const d = detail(
       makeInput({
@@ -111,6 +123,79 @@ describe("create -> display round-trip", () => {
     const d = detail(makeInput({ bedrooms: "3", bathrooms: "2" }));
     expect(d.bedrooms).toBe(3);
     expect(d.bathrooms).toBe(2);
+  });
+});
+
+// Regression guard: every one of these fields was collected by the form and
+// SAVED but never surfaced on the detail page before. Each must now round-trip.
+describe("previously-dropped agent fields now round-trip to the detail view", () => {
+  it("rent: monthly rent, security deposit and negotiable flag surface", () => {
+    const d = detail(
+      makeInput({
+        purpose: "rent",
+        monthlyRent: "25000",
+        securityDeposit: "50000",
+        rentNegotiable: true,
+      })
+    );
+    expect(d.monthlyRent).toBe(25000);
+    expect(d.securityDeposit).toBe(50000);
+    expect(d.isNegotiable).toBe(true);
+  });
+
+  it("age of property, OC received and available-from carry through", () => {
+    const d = detail(
+      makeInput({
+        propertyAgeCategory: "1 to 5 years",
+        ocReceived: true,
+        availableFrom: "2026-08-01",
+      })
+    );
+    expect(d.propertyAge).toMatch(/Years/i);
+    expect(d.ocReceived).toBe(true);
+    expect(d.availableFrom).toBe("2026-08-01");
+  });
+
+  it("price-negotiable on a sale surfaces", () => {
+    expect(detail(makeInput({ priceNegotiable: true })).isNegotiable).toBe(true);
+    expect(detail(makeInput({ priceNegotiable: false })).isNegotiable).toBe(false);
+  });
+
+  it("extra parking on request round-trips (residential)", () => {
+    expect(
+      detail(makeInput({ extraParkingOnRequest: true })).extraParkingOnRequest
+    ).toBe(true);
+  });
+
+  it("industrial/land shop specs (extra_attributes) all surface", () => {
+    const d = detail(
+      makeInput({
+        purpose: "sell",
+        category: "industrial",
+        shopFrontage: "40 ft",
+        ceilingHeight: "18 ft",
+        washroom: "2",
+        hasMezzanine: true,
+        mezzanineArea: "500 sqft",
+        mainRoadFacing: true,
+        cornerShop: true,
+        suitableFor: ["warehouse", "manufacturing"],
+      })
+    );
+    expect(d.shopFrontage).toBe("40 ft");
+    expect(d.ceilingHeight).toBe("18 ft");
+    expect(d.washroom).toBe("2");
+    expect(d.hasMezzanine).toBe(true);
+    expect(d.mezzanineArea).toBe("500 sqft");
+    expect(d.mainRoadFacing).toBe(true);
+    expect(d.cornerShop).toBe(true);
+    expect(d.suitableFor).toEqual(["warehouse", "manufacturing"]);
+  });
+
+  it("pincode + state survive for the address block", () => {
+    const d = detail(makeInput({ pincode: "560038", state: "Karnataka" }));
+    expect(d.pincode).toBe("560038");
+    expect(d.state).toBe("Karnataka");
   });
 });
 

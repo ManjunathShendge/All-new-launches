@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { notifyAdmins } from "@/lib/notify";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type CreatePropertyInput,
@@ -162,7 +163,10 @@ export async function createProperty(
     // applied yet — see insertProperty().
     const res = await insertProperty(db, row);
     if (res.error || res.id == null) {
-      return { ok: false, error: res.error ?? "Could not create property." };
+      return {
+        ok: false,
+        error: getUserErrorMessage(res.error, "Could not create property."),
+      };
     }
     const propertyId = res.id;
 
@@ -196,7 +200,7 @@ export async function createProperty(
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Could not create property.",
+      error: getUserErrorMessage(e, "Could not create property."),
     };
   }
 }

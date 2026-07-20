@@ -10,6 +10,7 @@ import {
   type AdminPropertyPage,
 } from "@/lib/admin/admin-queries";
 import { ADMIN_PROPERTIES_PAGE_SIZE } from "@/lib/admin/constants";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { notifyLister } from "@/lib/notify";
 
 // The only statuses an admin can set from the review UI. "rejected" matches the
@@ -71,7 +72,8 @@ export async function setPropertyStatus(
     .select("user_id, title, slug")
     .maybeSingle();
 
-  if (error) return { ok: false, error: error.message };
+  if (error)
+    return { ok: false, error: getUserErrorMessage(error, "Could not update the property.") };
 
   // Notify the lister of the review outcome.
   if (updated) {

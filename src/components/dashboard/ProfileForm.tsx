@@ -17,6 +17,7 @@ import type { Lead } from "@/types/lead";
 import type { EditableProfile } from "@/lib/actions/profile.action";
 import { updateMyProfile, changeMyPassword } from "@/lib/actions/profile.action";
 import { compressImage, uploadFileToR2 } from "@/lib/r2/upload";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 const ACCOUNT_LABEL: Record<string, string> = {
   agent: "Agent",
@@ -77,7 +78,7 @@ export default function ProfileForm({
       const url = await uploadFileToR2(compressed);
       setAvatarUrl(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Photo upload failed.");
+      setError(getUserErrorMessage(e, "Photo upload failed."));
     } finally {
       setUploading(false);
     }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { premiumShowcaseRepository } from "@/lib/supabase/premium-showcase.repository";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import type {
   ShowcaseAdminItem,
   ShowcaseCard,
@@ -89,7 +90,7 @@ export async function saveShowcase(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Could not save the item.",
+      error: getUserErrorMessage(e, "Could not save the item."),
     };
   }
 }
@@ -106,7 +107,7 @@ export async function deleteShowcase(id: number): Promise<ShowcaseResult> {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Could not delete the item.",
+      error: getUserErrorMessage(e, "Could not delete the item."),
     };
   }
 }
@@ -126,7 +127,7 @@ export async function toggleShowcaseActive(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Could not update the item.",
+      error: getUserErrorMessage(e, "Could not update the item."),
     };
   }
 }

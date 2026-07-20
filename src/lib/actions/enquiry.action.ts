@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { enquiryRepository } from "@/lib/supabase/enquiry.repository";
 import { notifyAdmins } from "@/lib/notify";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 export interface EnquiryInput {
   name?: string;
@@ -101,7 +102,7 @@ export async function submitEnquiry(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Something went wrong.",
+      error: getUserErrorMessage(e, "Something went wrong."),
     };
   }
 }

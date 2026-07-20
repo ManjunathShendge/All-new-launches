@@ -74,6 +74,16 @@ const STATUSES: PurchaseStatus[] = ["new", "contacted", "converted", "dead"];
 const PAGE_SIZE = 20;
 type BrowseTab = "all" | "available" | "owned" | "new";
 
+// Friendly labels + preferred order for the (data-driven) type filter. Only
+// categories that actually appear in the marketplace are offered.
+const CATEGORY_LABEL: Record<string, string> = {
+  residential: "Residential",
+  commercial: "Commercial",
+  land: "Land / Plot",
+  industrial: "Industrial",
+};
+const CATEGORY_ORDER = ["residential", "commercial", "land", "industrial"];
+
 // Numbered pagination window with ellipses (e.g. 1 … 4 5 6 … 12).
 function pageWindow(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -166,6 +176,10 @@ function Browse({
   const [filters, setFilters] = useState<MarketFilter>({ sort: "newest" });
   const [now] = useState(() => Date.now());
   const [leads, setLeads] = useState<MarketLeadCard[]>([]);
+  // Distinct property categories present across ALL active leads (computed from
+  // the unfiltered mount load) — drives the type dropdown so it never offers a
+  // category that would return nothing.
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<BrowseTab>("all");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -190,7 +204,14 @@ function Browse({
   useEffect(() => {
     let active = true;
     browseLeads({ sort: "newest" })
-      .then((r) => active && setLeads(r))
+      .then((r) => {
+        if (!active) return;
+        setLeads(r);
+        const present = new Set(
+          r.map((l) => l.propertyCategory).filter((v): v is string => !!v)
+        );
+        setCategories(CATEGORY_ORDER.filter((c) => present.has(c)));
+      })
       .catch(() => active && setLeads([]))
       .finally(() => active && setLoading(false));
     return () => {
@@ -443,20 +464,23 @@ function Browse({
             className={`${input} w-52 pl-8`}
           />
         </div>
-        <Select
-          inline
-          value={filters.propertyType ?? ""}
-          onChange={(e) => update({ propertyType: e.target.value || undefined })}
-          className={input}
-        >
-          <option value="">Any type</option>
-          <option value="apartment">Apartment / Flat</option>
-          <option value="villa">House / Villa</option>
-          <option value="plot">Plot / Land</option>
-          <option value="office">Office</option>
-          <option value="shop">Shop / Showroom</option>
-          <option value="warehouse">Warehouse / Industrial</option>
-        </Select>
+        {/* Only render the type filter when there's a real choice to make —
+            i.e. the marketplace holds leads from 2+ categories. */}
+        {categories.length > 1 && (
+          <Select
+            inline
+            value={filters.propertyType ?? ""}
+            onChange={(e) => update({ propertyType: e.target.value || undefined })}
+            className={input}
+          >
+            <option value="">Any type</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_LABEL[c] ?? c}
+              </option>
+            ))}
+          </Select>
+        )}
         {/* Price range */}
         <div className="flex items-center gap-1.5">
           <input

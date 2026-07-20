@@ -69,7 +69,7 @@ export default function WhyChooseUs() {
             variants={headerVariants}
             className="mb-4 text-[32px] font-bold tracking-tight text-[#0F172A] font-['Plus_Jakarta_Sans'] lg:text-[48px] leading-[1.1]"
           >
-            Why Choose PropFind?
+            Why Choose All New Launches?
           </motion.h2>
           
           <motion.p 

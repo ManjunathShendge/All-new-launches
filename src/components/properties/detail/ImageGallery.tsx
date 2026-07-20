@@ -26,8 +26,9 @@ export default function ImageGallery({
 
   return (
     <div className="overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest)">
-      {/* Main image */}
-      <div className="relative aspect-16/10 w-full overflow-hidden bg-slate-100">
+      {/* Main image — capped height so lower-res sources aren't upscaled into
+          a pixelated hero on large screens. */}
+      <div className="relative aspect-16/10 max-h-125 w-full overflow-hidden bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={slides[active]}

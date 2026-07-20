@@ -22,6 +22,8 @@ export interface CreatePropertyInput {
   maxArea: string;
   pricePerSqft: string;
   propertyTypes: string[];
+  /** Project-level BHK configurations, e.g. ["2", "3", "4+"]. */
+  configurations?: string[];
   parkingSpaces: string;
   extraParkingOnRequest: boolean;
   facingsAvailable: string[];
@@ -144,9 +146,22 @@ export function buildPropertyRow(
   const facingValue = isProject
     ? input.facingsAvailable.map(code).join(",")
     : input.facing || "";
-  const config = input.bedrooms
-    ? `${input.bedrooms.replace("+", "")}bhk`
-    : "";
+  // Configurations: a project can offer several BHK types (e.g. 2/3/4 BHK), a
+  // single/resale unit has just the one derived from its bedroom count. Stored
+  // comma-joined in `available_configurations`; `configuration` keeps the first
+  // as the headline value. The detail page reads the full list back.
+  const toBhk = (v: string) => `${v.replace("+", "").trim()}bhk`;
+  const configList = (
+    isProject && input.configurations?.length
+      ? input.configurations
+      : input.bedrooms
+        ? [input.bedrooms]
+        : []
+  )
+    .map(toBhk)
+    .filter((c) => c !== "bhk");
+  const availableConfigurations = [...new Set(configList)].join(",");
+  const config = configList[0] ?? "";
   const isSell = input.purpose === "sell";
   const isRentLike =
     input.purpose === "rent" ||
@@ -169,7 +184,7 @@ export function buildPropertyRow(
     property_type: typeCode,
     available_property_types: availableTypes,
     configuration: config,
-    available_configurations: config,
+    available_configurations: availableConfigurations,
 
     is_negotiable:
       (isSell ? input.priceNegotiable : input.rentNegotiable) ? 1 : 0,
@@ -207,6 +222,7 @@ export function buildPropertyRow(
     possession_status: POSSESSION_CODE[input.possessionStatus] ?? "",
     possession_month: numOrNull(input.possessionMonth),
     possession_year: numOrNull(input.possessionYear),
+    available_from: input.availableFrom?.trim() || null,
     ownership_type: input.ownershipType || "",
     rera_number: input.reraId?.trim() || "",
     property_age: input.propertyAgeCategory
@@ -252,13 +268,19 @@ export function buildPropertyRow(
     row.security_deposit_rent = numOr0(input.securityDeposit);
   }
 
+  // Miscellaneous attributes without a dedicated column go into extra_attributes
+  // (jsonb) so nothing the agent enters is dropped. Shop/industrial/land specs
+  // are added on top for those categories.
+  const extra: Record<string, unknown> = {};
+  if (input.extraParkingOnRequest) extra.extraParkingOnRequest = true;
+
   if (usesShopLayout && !isRentLike) {
     if (input.pricePerSqft) row.price_per_sqft = numOr0(input.pricePerSqft);
     if (input.securityDeposit) {
       row.security_deposit = numOr0(input.securityDeposit);
       row.security_deposit_rent = numOr0(input.securityDeposit);
     }
-    row.extra_attributes = {
+    Object.assign(extra, {
       shopFrontage: input.shopFrontage || null,
       ceilingHeight: input.ceilingHeight || null,
       washroom: input.washroom || null,
@@ -268,8 +290,10 @@ export function buildPropertyRow(
       mainRoadFacing: input.mainRoadFacing,
       cornerShop: input.cornerShop,
       suitableFor: input.suitableFor,
-    };
+    });
   }
+
+  row.extra_attributes = Object.keys(extra).length ? extra : null;
 
   return row;
 }

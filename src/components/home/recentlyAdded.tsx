@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   MapPin,
-  Heart,
   Clock,
   Star,
   BedDouble,
@@ -17,6 +16,7 @@ import {
   SearchX
 } from "lucide-react";
 import { useState } from "react";
+import SaveButton from "@/components/properties/SaveButton";
 import { PropertyCard } from "@/types/property-card";
 import { formatPriceRange, titleCase } from "@/lib/format";
 
@@ -36,7 +36,6 @@ export default function RecentlyAddedProperties({
 }: {
   properties?: PropertyCard[];
 }) {
-  const [wishlist, setWishlist] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("All");
 
   const filteredProperties = properties.filter((prop) =>
@@ -185,45 +184,10 @@ export default function RecentlyAddedProperties({
                       </span>
                     )}
 
-                    {/* Wishlist Button */}
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() =>
-                        setWishlist((prev) =>
-                          prev.includes(item.slug)
-                            ? prev.filter((x) => x !== item.slug)
-                            : [...prev, item.slug],
-                        )
-                      }
-                      className="
-                        absolute
-                        z-20
-                        right-3
-                        top-3
-                        flex 
-                        h-10 
-                        w-10 
-                        items-center 
-                        justify-center  
-                        rounded-pill 
-                        bg-(--surface-container-lowest) 
-                        opacity-0 
-                        shadow-md 
-                        transition-all  
-                        duration-300 
-                        group-hover:opacity-100 
-                        hover:bg-(--surface-container-low)
-                      "
-                    >
-                      <Heart
-                        size={16}
-                        className={`transition-all duration-300 ${
-                          wishlist.includes(item.slug)
-                            ? "fill-(--error) text-(--error)"
-                            : "text-(--outline)"
-                        }`}
-                      />
-                    </motion.button>
+                    {/* Wishlist Button (DB-backed save) */}
+                    <div className="absolute right-3 top-3 z-20 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                      <SaveButton propertyId={item.id} size="sm" />
+                    </div>
 
                     {/* Stats Overlay */}
                     <div className="absolute bottom-3 left-3 flex items-center gap-3 rounded-md bg-(--inverse-surface)/70 px-2.5 py-1.5 text-label-sm text-(--inverse-on-surface) backdrop-blur-sm">

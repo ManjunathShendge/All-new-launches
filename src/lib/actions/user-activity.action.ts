@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { createClient } from "@/lib/supabase/server";
 import { userActivityRepository } from "@/lib/supabase/user-activity.repository";
 import type { PropertyCard } from "@/types/property-card";
@@ -33,7 +34,7 @@ export async function toggleSavedProperty(
     revalidatePath("/profile");
     return { ok: true, saved };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Failed." };
+    return { ok: false, error: getUserErrorMessage(e, "Failed.") };
   }
 }
 

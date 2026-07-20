@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AuthController } from "@/lib/controllers/auth.controller";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function ForgotPasswordPage() {
     setLoading(false);
 
     if (response.error) {
-      setError(response.error.message);
+      setError(getUserErrorMessage(response.error, "Could not send the reset link."));
       return;
     }
 

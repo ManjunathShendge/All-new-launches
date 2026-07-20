@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AuthController } from "@/lib/controllers/auth.controller";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function ResetPasswordForm() {
@@ -51,7 +52,7 @@ export default function ResetPasswordForm() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(getUserErrorMessage(error, "Could not update your password."));
       return;
     }
 

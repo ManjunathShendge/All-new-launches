@@ -199,12 +199,13 @@ describe("buildPropertyRow — land / shop extra_attributes", () => {
     expect(row.price_per_sqft).toBe(8000);
     expect(row.security_deposit).toBe(100000);
   });
-  it("rentals skip extra_attributes", () => {
+  it("rentals don't pack shop specs into extra_attributes", () => {
     const r = buildPropertyRow(
       makeInput({ category: "land", purpose: "rent", monthlyRent: "5000" }),
       CTX
     );
-    expect(r.extra_attributes).toBeUndefined();
+    // No misc attributes (extra parking etc.) => null, and never the shop specs.
+    expect(r.extra_attributes).toBeNull();
   });
 });
 

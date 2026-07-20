@@ -23,6 +23,10 @@ export interface PropertyDetail extends PropertyCard {
 
   pricePerSqft: number | null;
 
+  isNegotiable: boolean;
+  securityDeposit: number | null;
+  monthlyRent: number | null;
+
   carpetArea: number | null;
   superBuiltupArea: number | null;
 
@@ -34,6 +38,9 @@ export interface PropertyDetail extends PropertyCard {
   facing: string | null;
   furnishing: string | null;
   ownershipType: string | null;
+  propertyAge: string | null;
+  ocReceived: boolean;
+  availableFrom: string | null;
 
   virtualTourUrl: string | null;
 
@@ -50,6 +57,19 @@ export interface PropertyDetail extends PropertyCard {
 
   /** Amenity display labels parsed from the property's amenities column. */
   amenityLabels: string[];
+
+  /** Extra parking available on request (residential). */
+  extraParkingOnRequest: boolean;
+
+  /** Shop / industrial / land specs (from extra_attributes; null when N/A). */
+  shopFrontage: string | null;
+  ceilingHeight: string | null;
+  washroom: string | null;
+  hasMezzanine: boolean;
+  mezzanineArea: string | null;
+  mainRoadFacing: boolean;
+  cornerShop: boolean;
+  suitableFor: string[];
 
   gallery: PropertyImage[];
 

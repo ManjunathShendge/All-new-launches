@@ -6,6 +6,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { profileRepository } from "@/lib/supabase/profile.repository";
 import { notificationRepository } from "@/lib/supabase/notification.repository";
 import { leadService } from "@/lib/services/lead.service";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 export interface ActionResult {
   success: boolean;
@@ -81,7 +82,7 @@ async function run(fn: () => Promise<void>): Promise<ActionResult> {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Something went wrong.",
+      error: getUserErrorMessage(e, "Something went wrong."),
     };
   }
 }

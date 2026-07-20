@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { profileRepository } from "@/lib/supabase/profile.repository";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 type AccountType = "agent" | "owner" | "user";
 function toAccountType(v: unknown): AccountType {
@@ -130,7 +131,8 @@ export async function updateMyProfile(
     })
     .eq("id", user.id);
 
-  if (error) return { ok: false, error: error.message };
+  if (error)
+    return { ok: false, error: getUserErrorMessage(error, "Could not save your profile.") };
 
   revalidatePath("/agent/dashboard");
   revalidatePath("/owner/dashboard");
@@ -151,6 +153,7 @@ export async function changeMyPassword(
   if (!user) return { ok: false, error: "Not signed in." };
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) return { ok: false, error: error.message };
+  if (error)
+    return { ok: false, error: getUserErrorMessage(error, "Could not change your password.") };
   return { ok: true };
 }

@@ -18,7 +18,6 @@ const STATIC_ROUTES: {
   { path: "/nri", priority: 0.7, changeFrequency: "weekly" },
   { path: "/events", priority: 0.7, changeFrequency: "weekly" },
   { path: "/blog", priority: 0.7, changeFrequency: "daily" },
-  { path: "/services", priority: 0.6, changeFrequency: "monthly" },
   { path: "/about", priority: 0.5, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "monthly" },
   { path: "/privacypolicy", priority: 0.2, changeFrequency: "yearly" },

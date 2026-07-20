@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 import { LoginData, SignupData, AuthResponse } from "@/types/auth.types";
 
@@ -22,7 +23,7 @@ export class AuthService {
     if (authError) {
       return {
         success: false,
-        error: authError.message,
+        error: getUserErrorMessage(authError, "Unable to login."),
       };
     }
 
@@ -69,7 +70,10 @@ export class AuthService {
       });
 
     if (authError) {
-      return { success: false, error: authError.message };
+      return {
+        success: false,
+        error: getUserErrorMessage(authError, "Unable to login."),
+      };
     }
 
     if (!authData.user) {
@@ -149,7 +153,7 @@ export class AuthService {
     if (authError) {
       return {
         success: false,
-        error: authError.message,
+        error: getUserErrorMessage(authError, "Unable to create account."),
       };
     }
 

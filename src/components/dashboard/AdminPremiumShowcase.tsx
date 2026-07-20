@@ -26,6 +26,7 @@ import {
 } from "@/lib/actions/premium-showcase.action";
 import Select from "@/components/ui/Select";
 import { compressImage, uploadFileToR2 } from "@/lib/r2/upload";
+import { getUserErrorMessage } from "@/lib/errors/user-message";
 import {
   SHOWCASE_STATUS_LABEL,
   type ShowcaseAdminItem,
@@ -758,7 +759,7 @@ function ImageField({
       const url = await uploadFileToR2(await compressImage(file));
       onChange(url);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Upload failed.");
+      setErr(getUserErrorMessage(e, "Upload failed."));
     } finally {
       setBusy(false);
     }
