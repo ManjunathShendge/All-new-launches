@@ -1,4 +1,5 @@
 import HeroSection from "./hero";
+import PremiumShowcaseBanner from "./PremiumShowcaseBanner";
 import CategoriesSection from "./categories";
 import TrustSection from "./Trust";
 import FeaturedLaunches from "./new-launches";
@@ -23,7 +24,8 @@ export default async function HomeSection() {
 
   return (
     <main>
-      <HeroSection showcase={showcase} />
+      <HeroSection />
+      <PremiumShowcaseBanner showcase={showcase} />
       <CategoriesSection />
       <TrustSection />
       <FeaturedLaunches properties={featured} />

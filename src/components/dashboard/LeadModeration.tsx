@@ -7,6 +7,8 @@ import { Check, X } from "lucide-react";
 import type { Lead, LeadApprovalStatus } from "@/types/lead";
 import type { AssignableAgent } from "@/lib/supabase/lead.repository";
 import Select from "@/components/ui/Select";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 import {
   approveLead,
   disapproveLead,
@@ -14,6 +16,17 @@ import {
 } from "@/lib/actions/lead-admin.action";
 
 type Filter = "all" | LeadApprovalStatus;
+
+const LEAD_COLUMNS: ExportColumn<Lead>[] = [
+  { header: "Date", value: (l) => formatDate(l.createdAt) },
+  { header: "Name", value: (l) => l.name },
+  { header: "Email", value: (l) => l.email },
+  { header: "Phone", value: (l) => l.phone },
+  { header: "Property", value: (l) => l.propertyTitle ?? `Property #${l.propertyId ?? ""}` },
+  { header: "Agent", value: (l) => l.agentName ?? "" },
+  { header: "Message", value: (l) => l.message },
+  { header: "Approval Status", value: (l) => l.approvalStatus },
+];
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "pending", label: "Pending" },
@@ -84,11 +97,20 @@ export default function LeadModeration({
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900">Lead Approvals</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Approve, reject, or assign incoming enquiries to an agent.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Lead Approvals</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Approve, reject, or assign incoming enquiries to an agent.
+          </p>
+        </div>
+        {visible.length > 0 && (
+          <ExportButton
+            filename={filter === "all" ? "leads" : `leads-${filter}`}
+            columns={LEAD_COLUMNS}
+            rows={visible}
+          />
+        )}
       </div>
 
       {/* Status filter */}

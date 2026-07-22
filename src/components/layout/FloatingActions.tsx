@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
+import ChatbotWidget from "./ChatbotWidget";
 
 const WHATSAPP_NUMBER = "919118404041";
 const WHATSAPP_MESSAGE =
@@ -46,10 +47,13 @@ export default function FloatingActions() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-green-500/30 transition-transform duration-300 hover:scale-110"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-green-500/30 transition-transform duration-300 hover:scale-110"
       >
-        <FaWhatsapp size={30} />
+        <FaWhatsapp size={24} />
       </a>
+
+      {/* Chatbot launcher — sits below WhatsApp */}
+      <ChatbotWidget />
     </div>
   );
 }

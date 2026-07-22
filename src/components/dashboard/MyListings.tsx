@@ -3,6 +3,17 @@
 import Link from "next/link";
 import { Home, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import type { MyListing } from "@/lib/actions/listing.action";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
+
+const LISTING_COLUMNS: ExportColumn<MyListing>[] = [
+  { header: "Property", value: (l) => l.title },
+  { header: "Type", value: (l) => titleCase(l.propertyType) },
+  { header: "Category", value: (l) => titleCase(l.propertyCategory) },
+  { header: "Listing", value: (l) => titleCase(l.transactionType) },
+  { header: "Status", value: (l) => l.status ?? "" },
+  { header: "Date Added", value: (l) => formatDate(l.createdAt) },
+];
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -62,14 +73,23 @@ export default function MyListings({
             Manage your property listings
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onAddNew}
-          className="flex items-center gap-1.5 rounded-lg bg-[#0369a1] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#075985]"
-        >
-          <Plus className="h-4 w-4" />
-          Add New
-        </button>
+        <div className="flex items-center gap-2">
+          {listings.length > 0 && (
+            <ExportButton
+              filename="my-listings"
+              columns={LISTING_COLUMNS}
+              rows={listings}
+            />
+          )}
+          <button
+            type="button"
+            onClick={onAddNew}
+            className="flex items-center gap-1.5 rounded-lg bg-[#0369a1] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#075985]"
+          >
+            <Plus className="h-4 w-4" />
+            Add New
+          </button>
+        </div>
       </div>
 
       {listings.length === 0 ? (

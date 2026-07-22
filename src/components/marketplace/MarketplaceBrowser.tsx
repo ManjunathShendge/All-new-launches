@@ -25,6 +25,8 @@ import {
 } from "@/lib/actions/marketplace.action";
 import { createTopupOrder, verifyTopup } from "@/lib/actions/wallet.action";
 import Select from "@/components/ui/Select";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 import {
   MarketFilter,
   MarketLeadCard,
@@ -111,6 +113,26 @@ function loadRazorpay(): Promise<boolean> {
 
 const STATUSES: PurchaseStatus[] = ["new", "contacted", "converted", "dead"];
 const PAGE_SIZE = 20;
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+const PURCHASED_LEAD_COLUMNS: ExportColumn<PurchasedLead>[] = [
+  { header: "Contact", value: (l) => l.name },
+  { header: "Phone", value: (l) => l.phone },
+  { header: "Email", value: (l) => l.email },
+  { header: "Property", value: (l) => l.propertyTitle ?? "" },
+  { header: "Location", value: (l) => [l.locality, l.city].filter(Boolean).join(", ") },
+  { header: "Status", value: (l) => l.status },
+  { header: "Invoice", value: (l) => l.invoiceNo ?? "" },
+  { header: "Price", value: (l) => Math.round(l.price) },
+  { header: "Purchased", value: (l) => fmtDate(l.purchasedAt) },
+];
 type BrowseTab = "all" | "available" | "owned" | "new";
 
 // Preset property-value bands (in ₹) for the min/max value dropdowns. These
@@ -1103,7 +1125,15 @@ function MyLeads() {
   }
 
   return (
-    <div className={`overflow-x-auto rounded-xl border border-slate-200 ${pending ? "opacity-60" : ""}`}>
+    <div>
+      <div className="mb-3 flex justify-end">
+        <ExportButton
+          filename="my-purchased-leads"
+          columns={PURCHASED_LEAD_COLUMNS}
+          rows={leads}
+        />
+      </div>
+      <div className={`overflow-x-auto rounded-xl border border-slate-200 ${pending ? "opacity-60" : ""}`}>
       <table className="w-full min-w-215 border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50/70 text-xs uppercase tracking-wide text-slate-500">
@@ -1167,6 +1197,7 @@ function MyLeads() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

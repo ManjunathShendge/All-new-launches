@@ -36,6 +36,10 @@ const connectSrc = [
   // R2: presigned PUT uploads go to the S3 endpoint; delivery from the public URL.
   "https://*.r2.cloudflarestorage.com",
   r2Origin,
+  // Lottie player: animation JSON from lottie.host, WASM runtime from the CDN.
+  "https://lottie.host",
+  "https://cdn.jsdelivr.net",
+  "https://unpkg.com",
   // Local HMR websocket + dev server in development only.
   isDev ? "ws: http://localhost:*" : "",
 ]
@@ -53,13 +57,19 @@ const csp = [
   "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com",
   // Images can come from Cloudinary, Unsplash, data/blob URIs — kept to https.
   "img-src 'self' data: blob: https:",
+  // Background/hero videos are served from Cloudinary; allow https media (plus
+  // blob/data) — without this, media falls back to default-src 'self' and is
+  // blocked.
+  "media-src 'self' data: blob: https:",
   "font-src 'self' data:",
   // Tailwind / styled-jsx emit inline styles.
   "style-src 'self' 'unsafe-inline'",
   // Next.js injects small inline bootstrap scripts. 'unsafe-eval' only in dev
   // (Turbopack/React refresh need it); production stays without eval.
   // Razorpay checkout.js is loaded from their CDN.
-  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isDev ? " 'unsafe-eval'" : ""}`,
+  // 'wasm-unsafe-eval' lets the Lottie player compile its WebAssembly runtime
+  // without opening the door to arbitrary eval().
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://checkout.razorpay.com${isDev ? " 'unsafe-eval'" : ""}`,
   `connect-src ${connectSrc}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
@@ -114,11 +124,7 @@ const nextConfig: NextConfig = {
   },
 
   async redirects() {
-    return [
-      // Services page is hidden for now — send any hit to the home page with a
-      // real (temporary) server redirect. Restore the route to bring it back.
-      { source: "/services", destination: "/", permanent: false },
-    ];
+    return [];
   },
 };
 

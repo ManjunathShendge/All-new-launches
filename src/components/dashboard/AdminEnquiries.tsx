@@ -1,11 +1,31 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Mail, Inbox, Newspaper, MessageSquare, Home } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Inbox,
+  Newspaper,
+  MessageSquare,
+  Home,
+  Landmark,
+} from "lucide-react";
 import { getSiteEnquiries } from "@/lib/actions/enquiry-admin.action";
 import type { SiteEnquiry } from "@/types/enquiry";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 
-type SourceTab = "all" | "newsletter" | "contact" | "blog";
+type SourceTab = "all" | "newsletter" | "contact" | "blog" | "loan";
+
+const ENQUIRY_COLUMNS: ExportColumn<SiteEnquiry>[] = [
+  { header: "Name", value: (e) => e.name ?? "" },
+  { header: "Email", value: (e) => e.email ?? "" },
+  { header: "Phone", value: (e) => e.phone ?? "" },
+  { header: "Interest", value: (e) => e.interest ?? "" },
+  { header: "Message", value: (e) => e.message ?? "" },
+  { header: "Source", value: (e) => SOURCE_META[e.source]?.label ?? e.source },
+  { header: "Date", value: (e) => fmtDate(e.createdAt) },
+];
 
 const SOURCE_META: Record<
   string,
@@ -14,6 +34,7 @@ const SOURCE_META: Record<
   newsletter: { label: "Newsletter", className: "bg-blue-50 text-blue-700 ring-blue-600/20" },
   contact: { label: "Valuation / Contact", className: "bg-amber-50 text-amber-700 ring-amber-600/20" },
   blog: { label: "Blog", className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  loan: { label: "Property Loan", className: "bg-slate-900 text-white ring-slate-700/40" },
 };
 
 function fmtDate(iso: string | null): string {
@@ -50,6 +71,7 @@ export default function AdminEnquiries() {
       newsletter: rows.filter((r) => r.source === "newsletter").length,
       contact: rows.filter((r) => r.source === "contact").length,
       blog: rows.filter((r) => r.source === "blog").length,
+      loan: rows.filter((r) => r.source === "loan").length,
     }),
     [rows]
   );
@@ -61,6 +83,7 @@ export default function AdminEnquiries() {
 
   const TABS: [SourceTab, string, number][] = [
     ["all", "All", counts.all],
+    ["loan", "Property Loan", counts.loan],
     ["newsletter", "Newsletter", counts.newsletter],
     ["contact", "Valuation / Contact", counts.contact],
     ["blog", "Blog", counts.blog],
@@ -68,18 +91,28 @@ export default function AdminEnquiries() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-          <Mail className="h-5 w-5 text-blue-600" /> Enquiries
-        </h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Newsletter signups and lead-capture form submissions.
-        </p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+            <Mail className="h-5 w-5 text-blue-600" /> Enquiries
+          </h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Newsletter signups and lead-capture form submissions.
+          </p>
+        </div>
+        {view.length > 0 && (
+          <ExportButton
+            filename={tab === "all" ? "enquiries" : `enquiries-${tab}`}
+            columns={ENQUIRY_COLUMNS}
+            rows={view}
+          />
+        )}
       </div>
 
       {/* KPIs */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Kpi icon={<Inbox className="h-4 w-4" />} tone="slate" label="Total" value={counts.all} />
+        <Kpi icon={<Landmark className="h-4 w-4" />} tone="navy" label="Property Loan" value={counts.loan} />
         <Kpi icon={<Newspaper className="h-4 w-4" />} tone="blue" label="Newsletter" value={counts.newsletter} />
         <Kpi icon={<Home className="h-4 w-4" />} tone="amber" label="Valuation / Contact" value={counts.contact} />
         <Kpi icon={<MessageSquare className="h-4 w-4" />} tone="emerald" label="Blog" value={counts.blog} />
@@ -190,6 +223,7 @@ const TONES: Record<string, string> = {
   blue: "bg-blue-50 text-blue-600",
   amber: "bg-amber-50 text-amber-600",
   emerald: "bg-emerald-50 text-emerald-600",
+  navy: "bg-slate-900 text-white",
 };
 
 function Kpi({

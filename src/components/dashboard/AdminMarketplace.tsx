@@ -25,7 +25,14 @@ import {
   getAgentsForCredits,
 } from "@/lib/actions/marketplace-admin.action";
 import Select from "@/components/ui/Select";
-import type { ListableLead, MarketplaceInsights } from "@/types/marketplace";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
+import type {
+  AdminBuyerRollup,
+  AdminPurchaseRow,
+  ListableLead,
+  MarketplaceInsights,
+} from "@/types/marketplace";
 
 function fmt(n: number) {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -47,6 +54,26 @@ function formatDate(iso: string | null): string {
     ? "—"
     : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
+
+const PURCHASE_COLUMNS: ExportColumn<AdminPurchaseRow>[] = [
+  { header: "Invoice", value: (r) => r.invoiceNo ?? "" },
+  { header: "Buyer", value: (r) => r.buyerName },
+  { header: "Buyer Email", value: (r) => r.buyerEmail },
+  { header: "Lead", value: (r) => r.leadName ?? "" },
+  { header: "Property", value: (r) => r.propertyTitle ?? "" },
+  { header: "Location", value: (r) => [r.locality, r.city].filter(Boolean).join(", ") },
+  { header: "Status", value: (r) => r.status },
+  { header: "Price", value: (r) => Math.round(r.price) },
+  { header: "Date", value: (r) => formatDate(r.purchasedAt) },
+];
+
+const BUYER_COLUMNS: ExportColumn<AdminBuyerRollup>[] = [
+  { header: "Buyer", value: (b) => b.buyerName },
+  { header: "Email", value: (b) => b.buyerEmail },
+  { header: "Leads Bought", value: (b) => b.leadsBought },
+  { header: "Total Spent", value: (b) => Math.round(b.totalSpent) },
+  { header: "Last Purchase", value: (b) => formatDate(b.lastPurchaseAt) },
+];
 
 const STATUS_STYLES: Record<string, string> = {
   new: "bg-blue-50 text-blue-700 ring-blue-600/20",
@@ -247,7 +274,16 @@ function Insights({ insights }: { insights: MarketplaceInsights | null }) {
 
       {/* Top buyers */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-slate-800">Top Buyers</h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-slate-800">Top Buyers</h3>
+          {insights.buyers.length > 0 && (
+            <ExportButton
+              filename="marketplace-top-buyers"
+              columns={BUYER_COLUMNS}
+              rows={insights.buyers}
+            />
+          )}
+        </div>
         {insights.buyers.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
             No purchases yet.
@@ -282,7 +318,16 @@ function Insights({ insights }: { insights: MarketplaceInsights | null }) {
 
       {/* Recent purchases */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-slate-800">Recent Purchases</h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-slate-800">Recent Purchases</h3>
+          {insights.recent.length > 0 && (
+            <ExportButton
+              filename="marketplace-purchases"
+              columns={PURCHASE_COLUMNS}
+              rows={insights.recent}
+            />
+          )}
+        </div>
         {insights.recent.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
             No purchases yet.

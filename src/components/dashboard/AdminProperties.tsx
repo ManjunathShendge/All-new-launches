@@ -4,7 +4,10 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Eye, X, ChevronLeft, ChevronRight, Check, Ban } from "lucide-react";
 import Select from "@/components/ui/Select";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 import type {
+  AdminProperty,
   AdminPropertyFilter,
   AdminPropertyPage,
 } from "@/lib/admin/admin-queries";
@@ -14,6 +17,17 @@ import {
   setPropertyStatus,
   type ReviewStatus,
 } from "@/lib/actions/admin-properties.action";
+
+const PROPERTY_COLUMNS: ExportColumn<AdminProperty>[] = [
+  { header: "Property", value: (p) => p.title },
+  { header: "Type", value: (p) => titleCase(p.propertyType) },
+  { header: "Category", value: (p) => titleCase(p.propertyCategory) },
+  { header: "Transaction", value: (p) => titleCase(p.transactionType) },
+  { header: "Scope", value: (p) => titleCase(p.possessionStatus) },
+  { header: "Agent", value: (p) => p.agentName ?? "" },
+  { header: "Status", value: (p) => p.status ?? "" },
+  { header: "Date", value: (p) => formatDate(p.createdAt) },
+];
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-amber-50 text-amber-700 ring-amber-600/20" },
@@ -171,6 +185,18 @@ export default function AdminProperties({
     });
   };
 
+  // Export walks every page for the active filter, not just the page on screen.
+  const fetchAllForExport = async (): Promise<AdminProperty[]> => {
+    const all: AdminProperty[] = [];
+    const pages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+    for (let p = 1; p <= pages; p++) {
+      const res = await fetchAdminProperties(p, filter);
+      all.push(...res.rows);
+      if (res.rows.length === 0) break;
+    }
+    return all;
+  };
+
   const changeStatus = (id: number, status: ReviewStatus) => {
     setBusyId(id);
     startTransition(async () => {
@@ -218,12 +244,21 @@ export default function AdminProperties({
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-slate-900">Properties</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          {count.toLocaleString("en-IN")} total{" "}
-          {count === 1 ? "property" : "properties"}
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Properties</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {count.toLocaleString("en-IN")} total{" "}
+            {count === 1 ? "property" : "properties"}
+          </p>
+        </div>
+        {count > 0 && (
+          <ExportButton
+            filename="properties"
+            columns={PROPERTY_COLUMNS}
+            rows={fetchAllForExport}
+          />
+        )}
       </div>
 
       {/* Filter bar */}

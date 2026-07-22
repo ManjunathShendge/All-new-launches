@@ -9,7 +9,7 @@ create table if not exists public.site_enquiries (
   phone       text,
   message     text,
   interest    text,                      -- e.g. "Apartment", "Investment"
-  source      text not null default 'blog',   -- blog | newsletter | contact
+  source      text not null default 'blog',   -- blog | newsletter | contact | loan
   page_url    text,
   created_at  timestamptz not null default now()
 );

@@ -15,6 +15,16 @@ import {
 import { ACTIVITY_TYPES, type ActivityType } from "@/lib/admin/constants";
 import type { ActivityItem } from "@/lib/admin/activity-queries";
 import { fetchAdminActivity } from "@/lib/actions/admin-activity.action";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
+
+const ACTIVITY_COLUMNS: ExportColumn<ActivityItem>[] = [
+  { header: "Actor", value: (a) => a.actor },
+  { header: "Action", value: (a) => a.action },
+  { header: "Detail", value: (a) => a.detail ?? "" },
+  { header: "Type", value: (a) => TYPE_META[a.type]?.label ?? a.type },
+  { header: "Time", value: (a) => absoluteTime(a.timestamp) },
+];
 
 const TYPE_META: Record<
   ActivityType,
@@ -119,15 +129,24 @@ export default function AdminActivity({
             Recent sign-ins, sign-ups and platform activity — newest first.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {items.length > 0 && (
+            <ExportButton
+              filename={filter === "all" ? "activity" : `activity-${filter}`}
+              columns={ACTIVITY_COLUMNS}
+              rows={items}
+            />
+          )}
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={pending}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Type filters (per menu-item view) */}

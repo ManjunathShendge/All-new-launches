@@ -19,6 +19,8 @@ import {
   Check,
 } from "lucide-react";
 import Select from "@/components/ui/Select";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 import { ADMIN_USERS_PAGE_SIZE as PAGE_SIZE } from "@/lib/admin/constants";
 import type {
   AdminUser,
@@ -83,6 +85,15 @@ function formatDate(iso: string | null): string {
     year: "numeric",
   });
 }
+
+const USER_COLUMNS: ExportColumn<AdminUser>[] = [
+  { header: "Name", value: (u) => u.fullName ?? "" },
+  { header: "Email", value: (u) => u.email ?? "" },
+  { header: "Phone", value: (u) => u.phone ?? "" },
+  { header: "Role", value: (u) => CATEGORY_META[u.category].label },
+  { header: "Account Type", value: (u) => u.accountType },
+  { header: "Joined", value: (u) => formatDate(u.createdAt) },
+];
 
 function pageWindow(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -235,6 +246,19 @@ export default function AdminUsers({
     search: search.trim() || undefined,
   });
 
+  // Export walks every page for the active filter, not just the page on screen.
+  const fetchAllForExport = async (): Promise<AdminUser[]> => {
+    const filter = currentFilter();
+    const all: AdminUser[] = [];
+    const pages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+    for (let p = 1; p <= pages; p++) {
+      const res = await fetchAdminUsers(p, filter);
+      all.push(...res.rows);
+      if (res.rows.length === 0) break;
+    }
+    return all;
+  };
+
   const pickCategory = (next: UserCategory | null) => {
     setCategory(next);
     load(1, { category: next ?? undefined, search: search.trim() || undefined });
@@ -366,11 +390,20 @@ export default function AdminUsers({
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-slate-900">Users</h2>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Manage everyone on the platform — roles, access and accounts.
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Users</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Manage everyone on the platform — roles, access and accounts.
+          </p>
+        </div>
+        {count > 0 && (
+          <ExportButton
+            filename="users"
+            columns={USER_COLUMNS}
+            rows={fetchAllForExport}
+          />
+        )}
       </div>
 
       {/* Stat cards (also act as category filters) */}

@@ -5,8 +5,21 @@ import Link from "next/link";
 import { Lead } from "@/types/lead";
 import { setMyLeadStatus } from "@/lib/actions/agent-lead.action";
 import Select from "@/components/ui/Select";
+import ExportButton from "@/components/ui/ExportButton";
+import type { ExportColumn } from "@/lib/export/csv";
 
 const STATUS_OPTIONS = ["new", "contacted", "closed", "lost"];
+
+const LEAD_COLUMNS: ExportColumn<Lead>[] = [
+  { header: "Date", value: (l) => formatDate(l.createdAt) },
+  { header: "Name", value: (l) => l.name },
+  { header: "Email", value: (l) => l.email },
+  { header: "Phone", value: (l) => l.phone },
+  { header: "Property", value: (l) => l.propertyTitle ?? `Property #${l.propertyId ?? ""}` },
+  { header: "Agent", value: (l) => l.agentName ?? "" },
+  { header: "Message", value: (l) => l.message },
+  { header: "Status", value: (l) => l.status },
+];
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -62,7 +75,11 @@ export default function LeadsTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-card border border-(--border) bg-(--surface-container-lowest)">
+    <div>
+      <div className="mb-3 flex justify-end">
+        <ExportButton filename="my-leads" columns={LEAD_COLUMNS} rows={leads} />
+      </div>
+      <div className="overflow-x-auto rounded-card border border-(--border) bg-(--surface-container-lowest)">
       <table className="w-full min-w-180 border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-(--border) text-xs uppercase tracking-wide text-muted">
@@ -151,6 +168,7 @@ export default function LeadsTable({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Home, Search } from "lucide-react";
+import NotFoundAnimation from "@/components/ui/NotFoundAnimation";
 
 export const metadata = {
   title: "Page not found",
@@ -9,7 +10,8 @@ export const metadata = {
 export default function NotFound() {
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-20 text-center">
-      <p className="text-sm font-semibold tracking-widest text-[#2563EB]">
+      <NotFoundAnimation />
+      <p className="mt-2 text-sm font-semibold tracking-widest text-[#2563EB]">
         404 ERROR
       </p>
       <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">

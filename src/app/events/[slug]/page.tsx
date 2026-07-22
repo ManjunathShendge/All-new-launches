@@ -5,6 +5,7 @@ import { CalendarDays, MapPin, Users, ArrowLeft } from "lucide-react";
 import { eventService } from "@/lib/services/event.service";
 import { eventCategoryLabel } from "@/types/event";
 import EventRsvp from "@/components/events/EventRsvp";
+import EventShare from "@/components/events/EventShare";
 import { SITE_URL, SITE_NAME, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +36,19 @@ export async function generateMetadata({
     [event.locality, event.city].filter(Boolean).join(", ") ||
     event.venue ||
     "";
-  const description =
-    event.description?.replace(/\s+/g, " ").trim().slice(0, 155) ||
-    `Register for ${event.title}${place ? ` in ${place}` : ""} — an event by ${SITE_NAME}.`;
+  // Fold the date and place into the OG description so social cards that render
+  // a description (Facebook, WhatsApp, Telegram, Slack…) show the key details.
+  const meta = [
+    `🗓 ${formatWhen(event.startsAt)}`,
+    place && `📍 ${place}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const blurb = event.description?.replace(/\s+/g, " ").trim();
+  const description = (
+    [meta, blurb].filter(Boolean).join(" — ") ||
+    `Register for ${event.title} — an event by ${SITE_NAME}.`
+  ).slice(0, 200);
   const url = `${SITE_URL}/events/${event.slug}`;
   const image = event.bannerUrl ? absoluteUrl(event.bannerUrl) : undefined;
 
@@ -174,6 +185,16 @@ export default async function EventDetailPage({
               />
             </div>
           )}
+
+          <div className="mt-6 border-t border-slate-100 pt-5">
+            <EventShare
+              title={event.title}
+              url={`${SITE_URL}/events/${event.slug}`}
+              dateText={formatWhen(event.startsAt)}
+              place={place}
+              description={event.description}
+            />
+          </div>
 
           {event.description && (
             <div className="mt-8 border-t border-slate-100 pt-6">

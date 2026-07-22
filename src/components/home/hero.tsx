@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, PlayCircle, X } from "lucide-react";
@@ -27,11 +27,7 @@ export default function HeroSection({
 }) {
   const hasShowcase = showcase.length > 0;
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showFirst, setShowFirst] = useState(true); // which <video> element is "on top"
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-
-  const videoARef = useRef<HTMLVideoElement>(null);
-  const videoBRef = useRef<HTMLVideoElement>(null);
 
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
@@ -49,36 +45,15 @@ export default function HeroSection({
   }, []);
 
   // -----------------------------
-  // Video Rotation
+  // Video Rotation — every clip is mounted with native muted autoplay and the
+  // active one is crossfaded in via opacity. (The previous imperative
+  // ref/src/play() approach never played reliably.)
   // -----------------------------
   useEffect(() => {
     const timer = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % VIDEOS.length;
-
-      const incomingRef = showFirst ? videoBRef : videoARef;
-      if (incomingRef.current) {
-        incomingRef.current.src = VIDEOS[nextIndex];
-        incomingRef.current.load();
-        incomingRef.current.play().catch(() => {});
-      }
-
-      setActiveIndex(nextIndex);
-      setShowFirst((prev) => !prev);
+      setActiveIndex((i) => (i + 1) % VIDEOS.length);
     }, TRANSITION_MS);
-
     return () => clearInterval(timer);
-  }, [activeIndex, showFirst]);
-
-  // Initial setup for background videos
-  useEffect(() => {
-    if (videoARef.current) {
-      videoARef.current.src = VIDEOS[0];
-      videoARef.current.play().catch(() => {});
-    }
-    if (videoBRef.current) {
-      videoBRef.current.src = VIDEOS[1 % VIDEOS.length];
-      videoBRef.current.load();
-    }
   }, []);
 
   // -----------------------------
@@ -134,27 +109,22 @@ export default function HeroSection({
     <section className="relative min-h-screen overflow-hidden bg-black text-white">
       {/* ---------------- Video Background ---------------- */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.video
-          ref={videoARef}
-          muted
-          loop
-          playsInline
-          preload="auto"
-          animate={{ opacity: showFirst ? 1 : 0 }}
-          transition={{ duration: FADE_DURATION, ease: "easeInOut" }}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-
-        <motion.video
-          ref={videoBRef}
-          muted
-          loop
-          playsInline
-          preload="auto"
-          animate={{ opacity: showFirst ? 0 : 1 }}
-          transition={{ duration: FADE_DURATION, ease: "easeInOut" }}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        {VIDEOS.map((src, i) => (
+          <motion.video
+            key={src}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: activeIndex === i ? 1 : 0 }}
+            transition={{ duration: FADE_DURATION, ease: "easeInOut" }}
+            className="absolute inset-0 h-full w-full object-cover"
+          >
+            <source src={src} type="video/mp4" />
+          </motion.video>
+        ))}
 
         <div className="absolute inset-0 bg-black/45" />
         <div className="absolute inset-0 bg-linear-to-b from-black/20 via-black/40 to-black/80" />

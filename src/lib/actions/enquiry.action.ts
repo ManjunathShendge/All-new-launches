@@ -12,7 +12,7 @@ export interface EnquiryInput {
   phone?: string;
   message?: string;
   interest?: string;
-  source?: "blog" | "newsletter" | "contact";
+  source?: "blog" | "newsletter" | "contact" | "loan";
   pageUrl?: string;
 }
 
@@ -87,11 +87,18 @@ export async function submitEnquiry(
     try {
       await notifyAdmins({
         type: "new_lead",
-        title: source === "newsletter" ? "New newsletter signup" : "New enquiry",
+        title:
+          source === "newsletter"
+            ? "New newsletter signup"
+            : source === "loan"
+              ? "New home-loan enquiry"
+              : "New enquiry",
         body:
           source === "newsletter"
             ? `${email} subscribed from the blog.`
-            : `${name || "Someone"} (${phone}) requested a callback.`,
+            : source === "loan"
+              ? `${name || "Someone"} (${phone}) wants a home loan.`
+              : `${name || "Someone"} (${phone}) requested a callback.`,
         link: "/admin/dashboard",
       });
     } catch {
