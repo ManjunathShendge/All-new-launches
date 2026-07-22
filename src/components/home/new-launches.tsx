@@ -50,11 +50,11 @@ export default function FeaturedLaunches({
               New Launches
             </span>
 
-            <h2 className="mt-4 font-bold tracking-tight text-foreground">
+            <h2 className="mt-4 text-balance font-bold tracking-tight text-foreground">
               Featured New Launches
             </h2>
 
-            <p className="mt-2 text-base text-muted">
+            <p className="mt-2 text-pretty text-base text-muted">
               Exclusive access to premium new projects before anyone else
             </p>
           </motion.div>
@@ -154,7 +154,7 @@ hover:shadow-[0_20px_45px_rgba(15,23,42,0.10),0_35px_80px_rgba(15,23,42,0.08)]
 
                 <p className="mt-1 text-sm text-muted">{type}</p>
 
-                <p className="mt-3 text-base font-bold text-primary">
+                <p className="mt-3 whitespace-nowrap text-base font-bold text-primary">
                   {price}
                 </p>
               </Link>

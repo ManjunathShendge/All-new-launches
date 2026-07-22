@@ -36,12 +36,12 @@ export default function PropertyCategories() {
       <div className="relative mx-auto max-w-7xl">
         <motion.div
           style={{ y: headingY }}
-          className="mb-14 mx-auto max-w-xl text-center flex flex-col items-center"
+          className="mb-14 mx-auto max-w-3xl text-center flex flex-col items-center"
         >
           <span className="inline-flex items-center rounded-full border border-(--border) bg-(--surface-container-lowest)/60 backdrop-blur-xl px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
             Browse by category
           </span>
-          <h2 className="font-bold mt-4 text-foreground tracking-tight">
+          <h2 className="mt-4 text-balance font-bold tracking-tight text-foreground">
             Find your perfect property type
           </h2>
         </motion.div>

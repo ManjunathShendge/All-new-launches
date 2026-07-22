@@ -29,7 +29,7 @@ const HOW = [
   {
     icon: Wallet,
     title: "Buy with credits",
-    body: "Top up your wallet and unlock contact details instantly — no waiting.",
+    body: "Top up your credits and unlock contact details instantly — no waiting.",
   },
   {
     icon: BadgeCheck,

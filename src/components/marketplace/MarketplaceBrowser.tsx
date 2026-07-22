@@ -33,7 +33,46 @@ import {
 } from "@/types/marketplace";
 
 /* ------------------------------ helpers ------------------------------ */
-const money = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+// Leads are priced/paid in Credits (1 Credit = ₹1). Currency symbols are never
+// shown in the marketplace — everything reads as "N Credits".
+const money = (n: number) => `${Math.round(n).toLocaleString("en-IN")} Credits`;
+
+/**
+ * A stable, city-based public code for a lead — shown instead of the real name
+ * to protect identity before purchase. e.g. Lucknow lead 543 -> "LUC1100543".
+ * Deterministic (same lead always gets the same code) and effectively unique.
+ */
+function leadCode(card: { leadId: number; city: string | null }): string {
+  const letters = (card.city ?? "").replace(/[^a-zA-Z]/g, "");
+  const prefix = (letters ? letters.slice(0, 3) : "IND")
+    .toUpperCase()
+    .padEnd(3, "X");
+  // 7-digit number hashed from the lead id (looks random, stays unique/stable).
+  const n = ((card.leadId * 2654435761) >>> 0) % 9_000_000 + 1_000_000;
+  return `${prefix}${n}`;
+}
+
+/** Title-case a raw type/category code, e.g. "independent_house" -> "Independent House". */
+function formatType(raw: string | null | undefined): string {
+  const s = raw?.trim();
+  if (!s) return "—";
+  return s.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+type TypeSource = { propertyType: string | null; propertyCategory: string | null };
+
+/** The stable key a card is grouped/filtered by — the specific type when set,
+ *  else the broader category. Kept lowercase so the display label and the
+ *  filter always agree. */
+function typeKeyOf(card: TypeSource): string {
+  return (card.propertyType?.trim() || card.propertyCategory?.trim() || "").toLowerCase();
+}
+
+/** Human property type for the marketplace: prefer the specific type, fall back
+ *  to the broader category, title-cased (e.g. "apartment" -> "Apartment"). */
+function propertyTypeLabel(card: TypeSource): string {
+  return formatType(card.propertyType?.trim() || card.propertyCategory?.trim());
+}
 // A lead counts as "new" for 3 days after the enquiry (matches the "New" badge).
 const FRESH_WINDOW_MS = 3 * 24 * 3.6e6;
 function isFresh(iso: string | null, now: number): boolean {
@@ -74,15 +113,25 @@ const STATUSES: PurchaseStatus[] = ["new", "contacted", "converted", "dead"];
 const PAGE_SIZE = 20;
 type BrowseTab = "all" | "available" | "owned" | "new";
 
-// Friendly labels + preferred order for the (data-driven) type filter. Only
-// categories that actually appear in the marketplace are offered.
-const CATEGORY_LABEL: Record<string, string> = {
-  residential: "Residential",
-  commercial: "Commercial",
-  land: "Land / Plot",
-  industrial: "Industrial",
-};
-const CATEGORY_ORDER = ["residential", "commercial", "land", "industrial"];
+// Preset property-value bands (in ₹) for the min/max value dropdowns. These
+// filter by the value of the property each lead enquired about.
+const MIN_VALUE_OPTS = [
+  { value: "", label: "Min Rs" },
+  { value: "300000", label: "Above ₹3 Lakh" },
+  { value: "5000000", label: "Above ₹50 Lakh" },
+  { value: "10000000", label: "Above ₹1 Cr" },
+  { value: "15000000", label: "Above ₹1.5 Cr" },
+  { value: "20000000", label: "Above ₹2 Cr" },
+  { value: "25000000", label: "Above ₹2.5 Cr" },
+];
+const MAX_VALUE_OPTS = [
+  { value: "", label: "Max Rs" },
+  { value: "10000000", label: "Upto ₹1 Cr" },
+  { value: "15000000", label: "Upto ₹1.5 Cr" },
+  { value: "20000000", label: "Upto ₹2 Cr" },
+  { value: "25000000", label: "Upto ₹2.5 Cr" },
+  { value: "50000000", label: "Upto ₹5 Cr" },
+];
 
 // Numbered pagination window with ellipses (e.g. 1 … 4 5 6 … 12).
 function pageWindow(current: number, total: number): (number | "…")[] {
@@ -179,7 +228,7 @@ function Browse({
   // Distinct property categories present across ALL active leads (computed from
   // the unfiltered mount load) — drives the type dropdown so it never offers a
   // category that would return nothing.
-  const [categories, setCategories] = useState<string[]>([]);
+  const [typeOptions, setTypeOptions] = useState<{ key: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<BrowseTab>("all");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -207,10 +256,19 @@ function Browse({
       .then((r) => {
         if (!active) return;
         setLeads(r);
-        const present = new Set(
-          r.map((l) => l.propertyCategory).filter((v): v is string => !!v)
+        // Build the type filter from the distinct property types actually
+        // present, using the SAME key/label as the Property Type column so the
+        // filter and the table always agree.
+        const map = new Map<string, string>();
+        for (const l of r) {
+          const key = typeKeyOf(l);
+          if (key && !map.has(key)) map.set(key, formatType(key));
+        }
+        setTypeOptions(
+          [...map.entries()]
+            .map(([key, label]) => ({ key, label }))
+            .sort((a, b) => a.label.localeCompare(b.label))
         );
-        setCategories(CATEGORY_ORDER.filter((c) => present.has(c)));
       })
       .catch(() => active && setLeads([]))
       .finally(() => active && setLoading(false));
@@ -401,7 +459,9 @@ function Browse({
     Boolean(filters.locality?.trim()) ||
     Boolean(filters.propertyType) ||
     filters.minPrice != null ||
-    filters.maxPrice != null;
+    filters.maxPrice != null ||
+    filters.propMinValue != null ||
+    filters.propMaxValue != null;
 
   const input =
     "rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-600";
@@ -464,9 +524,9 @@ function Browse({
             className={`${input} w-52 pl-8`}
           />
         </div>
-        {/* Only render the type filter when there's a real choice to make —
-            i.e. the marketplace holds leads from 2+ categories. */}
-        {categories.length > 1 && (
+        {/* Property type filter — always shown (with "Any type" + whatever
+            types are present) so it's a discoverable control. */}
+        {typeOptions.length > 0 && (
           <Select
             inline
             value={filters.propertyType ?? ""}
@@ -474,42 +534,46 @@ function Browse({
             className={input}
           >
             <option value="">Any type</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABEL[c] ?? c}
+            {typeOptions.map((o) => (
+              <option key={o.key} value={o.key}>
+                {o.label}
               </option>
             ))}
           </Select>
         )}
-        {/* Price range */}
+        {/* Property-value range — filters by the value of the enquired property */}
         <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min={0}
-            placeholder="Min ₹"
-            value={filters.minPrice ?? ""}
+          <Select
+            inline
+            value={filters.propMinValue != null ? String(filters.propMinValue) : ""}
             onChange={(e) =>
-              update(
-                { minPrice: e.target.value === "" ? undefined : Number(e.target.value) },
-                true
-              )
+              update({ propMinValue: e.target.value ? Number(e.target.value) : undefined })
             }
-            className={`${input} w-24`}
-          />
+            className={input}
+            aria-label="Minimum property value"
+          >
+            {MIN_VALUE_OPTS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <span className="text-slate-400">–</span>
-          <input
-            type="number"
-            min={0}
-            placeholder="Max ₹"
-            value={filters.maxPrice ?? ""}
+          <Select
+            inline
+            value={filters.propMaxValue != null ? String(filters.propMaxValue) : ""}
             onChange={(e) =>
-              update(
-                { maxPrice: e.target.value === "" ? undefined : Number(e.target.value) },
-                true
-              )
+              update({ propMaxValue: e.target.value ? Number(e.target.value) : undefined })
             }
-            className={`${input} w-24`}
-          />
+            className={input}
+            aria-label="Maximum property value"
+          >
+            {MAX_VALUE_OPTS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
         <Select
           inline
@@ -598,11 +662,11 @@ function Browse({
                   aria-label="Select all available"
                 />
               </th>
-              <th className="px-3 py-3 font-medium">Name</th>
+              <th className="px-3 py-3 font-medium">Lead ID</th>
               <th className="px-3 py-3 font-medium">Phone</th>
               <th className="px-3 py-3 font-medium">Email</th>
               <th className="px-3 py-3 font-medium">Location</th>
-              <th className="px-3 py-3 font-medium">Property</th>
+              <th className="px-3 py-3 font-medium">Property Type</th>
               <th className="px-3 py-3 font-medium">Lead</th>
               <th className="px-3 py-3 font-medium">Status</th>
               <th className="px-3 py-3 text-right font-medium">Price</th>
@@ -738,7 +802,7 @@ function Browse({
               {done.bought} lead{done.bought === 1 ? "" : "s"} purchased
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              {money(done.spent)} debited from your wallet. Find the unlocked
+              {money(done.spent)} debited from your credits. Find the unlocked
               contacts under <span className="font-medium text-slate-700">My Leads</span>.
             </p>
           </div>
@@ -791,8 +855,8 @@ function Row({
           aria-label="Select lead"
         />
       </td>
-      <td className="whitespace-nowrap px-3 py-3 font-semibold text-slate-900">
-        {card.name?.trim() || "Lead"}
+      <td className="whitespace-nowrap px-3 py-3 font-mono font-semibold text-slate-900">
+        {leadCode(card)}
       </td>
       {/* Locked contact — real value never sent; unlock after purchase. */}
       <td className="px-3 py-3">
@@ -804,8 +868,8 @@ function Row({
       <td className="whitespace-nowrap px-3 py-3 text-slate-600">
         {[card.locality, card.city].filter(Boolean).join(", ") || "—"}
       </td>
-      <td className="max-w-44 truncate px-3 py-3 text-slate-500" title={card.propertyTitle ?? ""}>
-        {card.propertyTitle ?? "Property enquiry"}
+      <td className="max-w-44 truncate px-3 py-3 text-slate-500">
+        {propertyTypeLabel(card)}
       </td>
       <td className="px-3 py-3">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${tag.className}`}>
@@ -818,8 +882,8 @@ function Row({
             <Check className="h-3 w-3" /> Owned
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
-            Available
+          <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-blue-700 ring-1 ring-inset ring-blue-600/20">
+            Latest
           </span>
         )}
       </td>
@@ -906,7 +970,7 @@ function WalletBox({
         currency: order.currency,
         order_id: order.orderId,
         name: "Leads Marketplace",
-        description: "Wallet top-up",
+        description: "Credits top-up",
         theme: { color: "#2563EB" },
         handler: async (resp) => {
           const v = await verifyTopup(
@@ -934,7 +998,7 @@ function WalletBox({
         <div className="flex items-center gap-2.5">
           <Wallet className="h-5 w-5 shrink-0 text-blue-600" />
           <div className="text-sm leading-tight">
-            <div className="text-xs text-slate-400">Wallet</div>
+            <div className="text-xs text-slate-400">Credits</div>
             <div className="font-semibold text-slate-900">{money(balance)}</div>
           </div>
         </div>
@@ -975,7 +1039,7 @@ function WalletBox({
                 onClick={() => setAmount(String(v))}
                 className="flex-1 rounded-md bg-slate-100 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200"
               >
-                ₹{v}
+                {v.toLocaleString("en-IN")}
               </button>
             ))}
           </div>

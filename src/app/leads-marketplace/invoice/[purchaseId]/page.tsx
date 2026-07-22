@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false } };
 
 function money(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`;
+  return `${n.toLocaleString("en-IN")} Credits`;
 }
 function fmtDate(iso: string | null) {
   if (!iso) return "—";
@@ -128,7 +128,7 @@ export default async function InvoicePage({
         </table>
 
         <p className="mt-6 text-xs text-slate-400">
-          Paid via wallet credits. This is a computer-generated invoice.
+          Paid via credits. This is a computer-generated invoice.
         </p>
       </div>
     </div>

@@ -266,14 +266,14 @@ export default function FilterSidebar() {
         Filters
       </button>
 
-      {/* Desktop sidebar — capped height, scrollable fields, pinned actions */}
+      {/* Desktop sidebar — all filters shown fully (no inner scroll) */}
       <aside className="hidden w-72 shrink-0 lg:block">
-        <div className="sticky top-24 flex max-h-[60vh] flex-col overflow-hidden rounded-card border border-(--border) bg-(--surface-container-lowest) shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+        <div className="sticky top-24 flex flex-col rounded-card border border-(--border) bg-(--surface-container-lowest) shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
           <h2 className="flex shrink-0 items-center gap-2 border-b border-(--border) px-6 py-4 text-base font-semibold text-foreground">
             <SlidersHorizontal size={18} />
             Filters
           </h2>
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="px-6 py-5">
             {filterFields}
           </div>
           <div className="shrink-0 border-t border-(--border) px-6 py-4">

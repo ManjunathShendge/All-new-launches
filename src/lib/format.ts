@@ -16,17 +16,32 @@ export function formatPrice(amount: number | null | undefined): string {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+/**
+ * Keep only positive values from a min/max pair and return them low→high.
+ * A "range" only exists when there are two DISTINCT positive values — a blank
+ * or 0 side, or a mirrored value, collapses to a single value, and the pair is
+ * always ordered ascending so bad data never renders as "big - small".
+ */
+function orderedPair(
+  min: number | null | undefined,
+  max: number | null | undefined
+): { lo: number; hi: number } | null {
+  const vals = [min, max].filter(
+    (v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0
+  );
+  if (vals.length === 0) return null;
+  return { lo: Math.min(...vals), hi: Math.max(...vals) };
+}
+
 /** Turn a min/max pair into a single value or a range. */
 export function formatPriceRange(
   min: number | null | undefined,
   max: number | null | undefined
 ): string {
-  const lo = min ?? max ?? null;
-  const hi = max ?? min ?? null;
-
-  if (lo == null || lo <= 0) return "Price on Request";
-  if (hi == null || hi === lo) return formatPrice(lo);
-  return `${formatPrice(lo)} - ${formatPrice(hi)}`;
+  const p = orderedPair(min, max);
+  if (!p) return "Price on Request";
+  if (p.lo === p.hi) return formatPrice(p.lo);
+  return `${formatPrice(p.lo)} - ${formatPrice(p.hi)}`;
 }
 
 /** Area in sq.ft, single value or range. */
@@ -34,12 +49,10 @@ export function formatAreaRange(
   min: number | null | undefined,
   max: number | null | undefined
 ): string {
-  const lo = min ?? max ?? null;
-  const hi = max ?? min ?? null;
-
-  if (lo == null || lo <= 0) return "N/A";
-  if (hi == null || hi === lo) return `${lo.toLocaleString("en-IN")} sq.ft`;
-  return `${lo.toLocaleString("en-IN")} - ${hi.toLocaleString("en-IN")} sq.ft`;
+  const p = orderedPair(min, max);
+  if (!p) return "N/A";
+  if (p.lo === p.hi) return `${p.lo.toLocaleString("en-IN")} sq.ft`;
+  return `${p.lo.toLocaleString("en-IN")} - ${p.hi.toLocaleString("en-IN")} sq.ft`;
 }
 
 /**

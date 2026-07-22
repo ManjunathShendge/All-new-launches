@@ -59,11 +59,11 @@ export default function RecentlyAddedProperties({
               Just Listed
             </span>
 
-            <h2 className="mt-4 text-headline-lg text-foreground">
+            <h2 className="mt-4 text-balance text-headline-lg text-foreground">
               Recently Added Properties
             </h2>
 
-            <p className="mt-2 text-body-md text-muted">
+            <p className="mt-2 text-pretty text-body-md text-muted">
               Fresh listings added in the last 24 hours
             </p>
           </motion.div>
@@ -219,12 +219,12 @@ export default function RecentlyAddedProperties({
                       {location || titleCase(item.propertyType)}
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-(--border) pt-4">
-                      <p className="text-headline-md text-primary">
+                    <div className="mt-4 flex items-center justify-between gap-2 border-t border-(--border) pt-4">
+                      <p className="min-w-0 truncate whitespace-nowrap text-base font-bold text-primary">
                         {price}
                       </p>
 
-                      <button className="relative z-20 flex h-9 w-9 items-center justify-center rounded-md bg-(--secondary-fixed) text-(--on-secondary-fixed-variant) transition-colors hover:bg-(--secondary-fixed-dim)">
+                      <button className="relative z-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-(--secondary-fixed) text-(--on-secondary-fixed-variant) transition-colors hover:bg-(--secondary-fixed-dim)">
                         <Phone size={16} />
                       </button>
                     </div>

@@ -33,6 +33,9 @@ export interface MarketFilter {
   propertyType?: string;
   minPrice?: number;
   maxPrice?: number;
+  /** Filter by the ENQUIRED PROPERTY's value (effective: min price, else max). */
+  propMinValue?: number;
+  propMaxValue?: number;
   sort?: "newest" | "price_low" | "price_high";
 }
 
@@ -69,6 +72,9 @@ export interface ListableLead {
   leadId: number;
   name: string;
   propertyTitle: string | null;
+  propertyType: string | null;
+  /** Effective value of the enquired property (min price, else max). */
+  propertyValue: number | null;
   city: string | null;
   locality: string | null;
   source: string | null;

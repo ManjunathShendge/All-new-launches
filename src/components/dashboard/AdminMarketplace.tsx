@@ -9,6 +9,9 @@ import {
   ShoppingBag,
   Users,
   Layers,
+  Wallet,
+  Search,
+  AlertTriangle,
 } from "lucide-react";
 import {
   getListableLeads,
@@ -16,12 +19,26 @@ import {
   listLeadForSale,
   listAllLeads,
   setPriceForAllLeads,
+  setPriceForMatchingLeads,
   unlistLead,
+  grantCredits,
+  getAgentsForCredits,
 } from "@/lib/actions/marketplace-admin.action";
+import Select from "@/components/ui/Select";
 import type { ListableLead, MarketplaceInsights } from "@/types/marketplace";
 
 function fmt(n: number) {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+/** Compact ₹ label for the price range slider: Cr / Lakh. */
+function priceLabel(n: number): string {
+  if (n >= 1_00_00_000) {
+    const v = n / 1_00_00_000;
+    return `₹${v % 1 ? v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "") : v} Cr`;
+  }
+  if (n >= 1_00_000) return `₹${Math.round(n / 1_00_000)} L`;
+  return `₹${n.toLocaleString("en-IN")}`;
 }
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -348,6 +365,470 @@ function Kpi({
   );
 }
 
+/* --------------------------- grant credits --------------------------- */
+type CreditAgent = { id: string; name: string; email: string; balance: number };
+
+const credits = (n: number) => `${Math.round(n).toLocaleString("en-IN")} Credits`;
+
+/**
+ * Manually top up a trusted broker's wallet with no payment — for brokers who
+ * settle commission with the company off-platform. Every grant is atomic,
+ * logged as a "grant" wallet transaction, and notifies the broker.
+ */
+function GrantCredits() {
+  const [agents, setAgents] = useState<CreditAgent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [selId, setSelId] = useState<string | null>(null);
+  const [amount, setAmount] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    getAgentsForCredits()
+      .then((a) => setAgents(a))
+      .catch(() => setAgents([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const sel = agents.find((a) => a.id === selId) ?? null;
+  const amt = Number(amount);
+  const valid = !!sel && Number.isFinite(amt) && amt > 0;
+
+  const filtered = agents
+    .filter((a) => {
+      const s = q.trim().toLowerCase();
+      return !s || a.name.toLowerCase().includes(s) || a.email.toLowerCase().includes(s);
+    })
+    .slice(0, 60);
+
+  const flash = (ok: boolean, text: string) => {
+    setToast({ ok, text });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const doGrant = () => {
+    if (!valid || !sel) return;
+    startTransition(async () => {
+      const res = await grantCredits(sel.id, amt);
+      if (res.success) {
+        setAgents((list) =>
+          list.map((a) => (a.id === sel.id ? { ...a, balance: a.balance + amt } : a))
+        );
+        flash(true, `${credits(amt)} added to ${sel.name}.`);
+        setAmount("");
+      } else {
+        flash(false, res.error ?? "Could not add credits.");
+      }
+      setConfirming(false);
+    });
+  };
+
+  const inputCls =
+    "rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400";
+
+  return (
+    <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+        <Wallet className="h-4 w-4 text-blue-600" /> Grant Credits
+      </h3>
+      <p className="mt-0.5 text-xs text-slate-500">
+        Manually add credits to a trusted broker&rsquo;s wallet — no payment
+        required. Use this for brokers who settle commission with the company
+        off-platform.
+      </p>
+
+      {loading ? (
+        <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-6 text-center text-sm text-slate-400">
+          Loading brokers…
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          {/* Broker picker */}
+          <div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search broker by name or email…"
+                className={`${inputCls} w-full pl-8`}
+              />
+            </div>
+            <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-slate-100">
+              {filtered.length === 0 ? (
+                <div className="p-6 text-center text-sm text-slate-400">
+                  No brokers found.
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {filtered.map((a) => {
+                    const active = a.id === selId;
+                    return (
+                      <li key={a.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelId(a.id)}
+                          className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition ${
+                            active ? "bg-blue-50" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium text-slate-900">
+                              {a.name}
+                            </span>
+                            <span className="block truncate text-xs text-slate-400">
+                              {a.email || "—"}
+                            </span>
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              active
+                                ? "bg-blue-600 text-white"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {credits(a.balance)}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Amount + action */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+            {sel ? (
+              <>
+                <p className="text-xs text-slate-500">Selected broker</p>
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {sel.name}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Current balance:{" "}
+                  <span className="font-semibold text-slate-700">
+                    {credits(sel.balance)}
+                  </span>
+                </p>
+
+                <label className="mt-3 block text-xs font-medium text-slate-600">
+                  Credits to add
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="e.g. 5000"
+                  className={`${inputCls} mt-1 w-full`}
+                />
+                <div className="mt-2 flex gap-1.5">
+                  {[1000, 5000, 10000].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setAmount(String(v))}
+                      className="flex-1 rounded-md bg-white py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                    >
+                      {v.toLocaleString("en-IN")}
+                    </button>
+                  ))}
+                </div>
+
+                {confirming ? (
+                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs text-amber-800">
+                      Add <b>{credits(amt)}</b> to <b>{sel.name}</b>? New balance
+                      will be <b>{credits(sel.balance + amt)}</b>.
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={doGrant}
+                        className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                      >
+                        {pending ? "Adding…" : "Confirm"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => setConfirming(false)}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!valid}
+                    onClick={() => setConfirming(true)}
+                    className="mt-3 w-full rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Add credits
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center py-6 text-center text-sm text-slate-400">
+                Select a broker to add credits.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div
+          className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
+            toast.ok
+              ? "bg-slate-900 text-white"
+              : "bg-red-50 text-red-700 ring-1 ring-red-200"
+          }`}
+        >
+          {toast.ok ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <AlertTriangle className="h-4 w-4" />
+          )}
+          {toast.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------- targeted pricing --------------------------- */
+const PRICE_CATEGORIES = [
+  { value: "", label: "Any category" },
+  { value: "residential", label: "Residential" },
+  { value: "commercial", label: "Commercial" },
+  { value: "land", label: "Land / Plot" },
+  { value: "industrial", label: "Industrial" },
+];
+const PRICE_TYPES = [
+  { value: "", label: "Any type" },
+  { value: "apartment", label: "Apartment" },
+  { value: "villa", label: "Villa" },
+  { value: "plot", label: "Plot" },
+  { value: "office", label: "Office" },
+  { value: "shop", label: "Shop" },
+  { value: "warehouse", label: "Warehouse" },
+];
+
+// Preset property-value bands (in ₹) for the min/max dropdowns.
+const MIN_VALUE_OPTS = [
+  { value: "", label: "No minimum" },
+  { value: "300000", label: "Above ₹3 Lakh" },
+  { value: "5000000", label: "Above ₹50 Lakh" },
+  { value: "10000000", label: "Above ₹1 Cr" },
+  { value: "15000000", label: "Above ₹1.5 Cr" },
+  { value: "20000000", label: "Above ₹2 Cr" },
+  { value: "25000000", label: "Above ₹2.5 Cr" },
+];
+const MAX_VALUE_OPTS = [
+  { value: "", label: "No maximum" },
+  { value: "10000000", label: "Upto ₹1 Cr" },
+  { value: "15000000", label: "Upto ₹1.5 Cr" },
+  { value: "20000000", label: "Upto ₹2 Cr" },
+  { value: "25000000", label: "Upto ₹2.5 Cr" },
+  { value: "50000000", label: "Upto ₹5 Cr" },
+];
+
+/**
+ * Re-price a slice of the marketplace: set a lead price on every lead whose
+ * property matches a chosen category / type and/or falls in a property-value
+ * range the admin types (e.g. properties worth ₹1–5 Cr).
+ */
+function PriceByFilter({ inputClass }: { inputClass: string }) {
+  const [category, setCategory] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+  const [propMin, setPropMin] = useState("");
+  const [propMax, setPropMax] = useState("");
+  const [price, setPrice] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const priceNum = Number(price);
+  const valid = Number.isFinite(priceNum) && priceNum > 0;
+
+  const flash = (ok: boolean, text: string) => {
+    setToast({ ok, text });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const apply = () => {
+    if (!valid) return;
+    startTransition(async () => {
+      const res = await setPriceForMatchingLeads(priceNum, {
+        category: category || undefined,
+        propertyType: propertyType || undefined,
+        propMinPrice: propMin ? Number(propMin) : undefined,
+        propMaxPrice: propMax ? Number(propMax) : undefined,
+      });
+      if (res.success) {
+        flash(
+          true,
+          res.affected
+            ? `${res.affected} matching lead${res.affected === 1 ? "" : "s"} re-priced to ${fmt(priceNum)}.`
+            : "No leads matched those filters."
+        );
+      } else {
+        flash(false, res.error ?? "Could not set prices.");
+      }
+      setConfirming(false);
+    });
+  };
+
+  // A readable summary of the active filters, for the confirmation prompt.
+  const filterLabel = [
+    category ? PRICE_CATEGORIES.find((c) => c.value === category)?.label : null,
+    propertyType ? PRICE_TYPES.find((t) => t.value === propertyType)?.label : null,
+    propMin || propMax
+      ? `property value ${propMin ? fmt(Number(propMin)) : "₹0"}–${propMax ? fmt(Number(propMax)) : "any"}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+        <TagIcon className="h-4 w-4 text-amber-600" /> Price by category &amp; value
+      </h3>
+      <p className="mt-0.5 text-xs text-slate-500">
+        Set a lead price on every lead whose property matches the filters below.
+        Leave a filter blank to ignore it. The property value range matches the
+        listed price of the property the lead enquired about.
+      </p>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Category</label>
+          <Select
+            wrapperClassName="w-full"
+            className={`${inputClass} w-full`}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {PRICE_CATEGORIES.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Property type</label>
+          <Select
+            wrapperClassName="w-full"
+            className={`${inputClass} w-full`}
+            value={propertyType}
+            onChange={(e) => setPropertyType(e.target.value)}
+          >
+            {PRICE_TYPES.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Property value (min–max)
+          </label>
+          <div className="space-y-1.5">
+            <Select
+              wrapperClassName="w-full"
+              className={`${inputClass} w-full`}
+              value={propMin}
+              onChange={(e) => setPropMin(e.target.value)}
+            >
+              {MIN_VALUE_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </Select>
+            <Select
+              wrapperClassName="w-full"
+              className={`${inputClass} w-full`}
+              value={propMax}
+              onChange={(e) => setPropMax(e.target.value)}
+            >
+              {MAX_VALUE_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            New lead price
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="e.g. 800"
+            className={`${inputClass} w-full`}
+          />
+        </div>
+      </div>
+
+      {confirming ? (
+        <div className="mt-3 rounded-lg border border-amber-300 bg-white p-3">
+          <p className="text-xs text-slate-700">
+            Set the price of all matching leads
+            {filterLabel ? ` (${filterLabel})` : " (all leads)"} to{" "}
+            <b>{fmt(priceNum)}</b>? This overwrites their current prices.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={apply}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              {pending ? "Applying…" : "Confirm"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setConfirming(false)}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={!valid}
+          onClick={() => setConfirming(true)}
+          className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+        >
+          Apply price to matching leads
+        </button>
+      )}
+
+      {toast && (
+        <div
+          className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
+            toast.ok ? "bg-slate-900 text-white" : "bg-red-50 text-red-700 ring-1 ring-red-200"
+          }`}
+        >
+          {toast.ok ? <Check className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+          {toast.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------- manage ------------------------------- */
 function Manage({
   leads,
@@ -373,8 +854,43 @@ function Manage({
   onSetAll: () => void;
 }) {
   const unlisted = leads.filter((l) => !(l.listed && l.active)).length;
+
+  // Captured-leads filters: by property type + property-value range (up to ₹10 Cr).
+  const MAX_PRICE = 100_000_000; // ₹10 Cr
+  const [fType, setFType] = useState("");
+  const [pMin, setPMin] = useState(0);
+  const [pMax, setPMax] = useState(MAX_PRICE);
+
+  // Distinct property types actually present in the captured leads (data-driven).
+  const typeOpts = Array.from(
+    new Set(
+      leads
+        .map((l) => (l.propertyType ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const priceActive = pMin > 0 || pMax < MAX_PRICE;
+  const shown = leads.filter((l) => {
+    if (fType && (l.propertyType ?? "").toLowerCase() !== fType) return false;
+    if (priceActive) {
+      if (l.propertyValue == null) return false;
+      if (l.propertyValue < pMin || l.propertyValue > pMax) return false;
+    }
+    return true;
+  });
+
+  const resetFilters = () => {
+    setFType("");
+    setPMin(0);
+    setPMax(MAX_PRICE);
+  };
+
   return (
     <div>
+      {/* Manually grant credits to trusted brokers (no payment) */}
+      <GrantCredits />
+
       {/* Bulk pricing — list all / set one price on everything */}
       <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
@@ -416,12 +932,91 @@ function Manage({
         </div>
       </div>
 
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-        Captured leads
-      </h3>
+      {/* Targeted pricing — by category / type / property value range */}
+      <PriceByFilter inputClass={inputClass} />
+
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          Captured leads
+          <span className="ml-2 font-normal normal-case text-slate-400">
+            ({shown.length}
+            {shown.length !== leads.length ? ` of ${leads.length}` : ""})
+          </span>
+        </h3>
+        {(fType || priceActive) && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="text-xs font-medium text-blue-600 hover:underline"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Filters: property type + property-value range */}
+      <div className="mb-4 grid gap-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Property type
+          </label>
+          <Select
+            wrapperClassName="w-full"
+            className={`${inputClass} w-full`}
+            value={fType}
+            onChange={(e) => setFType(e.target.value)}
+          >
+            <option value="">Any type</option>
+            {typeOpts.map((t) => (
+              <option key={t} value={t}>
+                {t.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-1 flex items-center justify-between text-xs font-medium text-slate-600">
+            <span>Property value</span>
+            <span className="font-semibold text-slate-800">
+              {priceLabel(pMin)} – {pMax >= MAX_PRICE ? `${priceLabel(MAX_PRICE)}+` : priceLabel(pMax)}
+            </span>
+          </label>
+          <div className="space-y-1.5 pt-1">
+            <input
+              type="range"
+              min={0}
+              max={MAX_PRICE}
+              step={500000}
+              value={pMin}
+              onChange={(e) =>
+                setPMin(Math.min(Number(e.target.value), pMax))
+              }
+              className="w-full accent-blue-600"
+              aria-label="Minimum property value"
+            />
+            <input
+              type="range"
+              min={0}
+              max={MAX_PRICE}
+              step={500000}
+              value={pMax}
+              onChange={(e) =>
+                setPMax(Math.max(Number(e.target.value), pMin))
+              }
+              className="w-full accent-blue-600"
+              aria-label="Maximum property value"
+            />
+          </div>
+        </div>
+      </div>
       {leads.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
           No captured leads yet.
+        </div>
+      ) : shown.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+          No leads match your search.
         </div>
       ) : (
         <div className={`overflow-x-auto rounded-xl border border-slate-200 ${pending ? "opacity-60" : ""}`}>
@@ -437,7 +1032,7 @@ function Manage({
               </tr>
             </thead>
             <tbody>
-              {leads.map((l) => (
+              {shown.map((l) => (
                 <tr key={l.leadId} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-3 font-medium text-slate-900">{l.name}</td>
                   <td className="px-4 py-3 text-slate-600">{l.propertyTitle ?? "—"}</td>

@@ -108,6 +108,48 @@ export async function setPriceForAllLeads(
   }
 }
 
+/**
+ * Set a price on every lead whose property matches the given filters (category,
+ * type, and/or property-value range). Returns how many leads were re-priced.
+ */
+export async function setPriceForMatchingLeads(
+  price: number,
+  filter: {
+    category?: string;
+    propertyType?: string;
+    propMinPrice?: number;
+    propMaxPrice?: number;
+  }
+): Promise<AdminResult & { affected?: number }> {
+  const adminId = await currentAdminId();
+  if (!adminId) return { success: false, error: "Admin access required." };
+  if (Number.isNaN(price) || price < 0) {
+    return { success: false, error: "Enter a valid price." };
+  }
+  if (
+    filter.propMinPrice != null &&
+    filter.propMaxPrice != null &&
+    filter.propMinPrice > filter.propMaxPrice
+  ) {
+    return { success: false, error: "Min value can't exceed max value." };
+  }
+  try {
+    const affected = await marketplaceRepository.setPriceForMatching(
+      price,
+      filter,
+      adminId
+    );
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/leads-marketplace");
+    return { success: true, affected };
+  } catch (e) {
+    return {
+      success: false,
+      error: getUserErrorMessage(e, "Failed to set prices."),
+    };
+  }
+}
+
 export async function unlistLead(leadId: number): Promise<AdminResult> {
   if (!(await currentAdminId())) {
     return { success: false, error: "Admin access required." };
@@ -144,7 +186,7 @@ export async function grantCredits(
     await notifyUser(profileId, {
       type: "credits",
       title: "Credits added to your wallet",
-      body: `₹${amount.toLocaleString("en-IN")} was credited by the admin.`,
+      body: `${amount.toLocaleString("en-IN")} Credits were added by the admin.`,
       link: "/leads-marketplace",
     });
     revalidatePath("/admin/dashboard");

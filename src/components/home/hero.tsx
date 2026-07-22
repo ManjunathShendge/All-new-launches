@@ -218,7 +218,7 @@ export default function HeroSection({
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className={`max-w-2xl text-lg leading-8 text-white/80 sm:text-xl ${
+            className={`max-w-2xl text-pretty text-lg leading-8 text-white/80 sm:text-xl ${
               hasShowcase ? "mb-0" : "mb-10"
             }`}
           >

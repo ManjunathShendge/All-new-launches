@@ -41,6 +41,8 @@ interface PropMeta {
   propertyCategory: string | null;
   minPrice: number | null;
   maxPrice: number | null;
+  /** WP user id of the lister — used to hide an agent's own leads from them. */
+  ownerWpId: number | null;
 }
 
 export class MarketplaceRepository {
@@ -50,18 +52,26 @@ export class MarketplaceRepository {
     const db = createServiceRoleClient();
     const { data } = await db
       .from("properties")
-      .select("id, title, slug, city, locality, property_type, property_category, min_price, max_price")
+      .select("id, title, slug, city, locality, property_type, available_property_types, property_category, min_price, max_price, user_id")
       .in("id", ids);
     for (const r of data ?? []) {
+      // `property_type` is often blank on projects — the actual type lives in
+      // `available_property_types` (e.g. "apartment,villa"). Use the first of
+      // those as the specific type so the card + filter show it.
+      const specificType =
+        (r.property_type as string | null)?.trim() ||
+        (r.available_property_types as string | null)?.split(",")[0]?.trim() ||
+        null;
       map.set(r.id as number, {
         title: (r.title as string | null) ?? null,
         slug: (r.slug as string | null) ?? null,
         city: (r.city as string | null) ?? null,
         locality: (r.locality as string | null) ?? null,
-        propertyType: (r.property_type as string | null) ?? null,
+        propertyType: specificType,
         propertyCategory: (r.property_category as string | null) ?? null,
         minPrice: r.min_price != null ? Number(r.min_price) : null,
         maxPrice: r.max_price != null ? Number(r.max_price) : null,
+        ownerWpId: (r.user_id as number | null) ?? null,
       });
     }
     return map;
@@ -73,6 +83,15 @@ export class MarketplaceRepository {
    */
   async browse(buyerId: string, filter: MarketFilter): Promise<MarketLeadCard[]> {
     const db = createServiceRoleClient();
+
+    // The buyer's own WP user id — leads generated for THEIR OWN listings must
+    // never appear in their marketplace (they'd be buying their own leads).
+    const { data: buyerProfile } = await db
+      .from("profiles")
+      .select("old_wp_user_id")
+      .eq("id", buyerId)
+      .maybeSingle();
+    const buyerWpId = (buyerProfile?.old_wp_user_id as number | null) ?? null;
 
     const { data: listings } = await db
       .from("marketplace_listings")
@@ -138,6 +157,16 @@ export class MarketplaceRepository {
       };
     });
 
+    // Hide leads generated for the buyer's OWN listings — an agent should only
+    // see leads for other people's properties, never their own.
+    if (buyerWpId != null) {
+      cards = cards.filter((c) => {
+        const ownerWpId =
+          c.propertyId != null ? meta.get(c.propertyId)?.ownerWpId ?? null : null;
+        return ownerWpId !== buyerWpId;
+      });
+    }
+
     // Case-insensitive substring match.
     const inc = (v: string | null, q: string) => {
       const needle = q.trim().toLowerCase();
@@ -157,23 +186,44 @@ export class MarketplaceRepository {
       cards = cards.filter((c) => inc(c.city, filter.city!));
     if (filter.locality?.trim())
       cards = cards.filter((c) => inc(c.locality, filter.locality!));
-    // Type filter matches the populated `property_category` first (residential/
-    // commercial/land), then falls back to the mostly-empty `property_type` and
-    // the title — so it works with the real data instead of silently emptying
-    // the list.
-    if (filter.propertyType?.trim())
-      cards = cards.filter(
-        (c) =>
-          inc(c.propertyCategory, filter.propertyType!) ||
-          inc(c.propertyType, filter.propertyType!) ||
-          inc(c.propertyTitle, filter.propertyType!)
-      );
+    // Type filter matches the SAME key shown in the "Property Type" column —
+    // the specific `property_type` when present, else the broader
+    // `property_category` — so the filter and the table always agree.
+    if (filter.propertyType?.trim()) {
+      const want = filter.propertyType.trim().toLowerCase();
+      cards = cards.filter((c) => {
+        const key = (
+          c.propertyType?.trim() ||
+          c.propertyCategory?.trim() ||
+          ""
+        ).toLowerCase();
+        return key === want;
+      });
+    }
     // Min/Max ₹ filter the LEAD price shown in the table (what the buyer pays),
     // not the underlying property's value.
     if (filter.minPrice != null)
       cards = cards.filter((c) => c.price >= filter.minPrice!);
     if (filter.maxPrice != null)
       cards = cards.filter((c) => c.price <= filter.maxPrice!);
+
+    // Property-value range filter — matches the value of the property the lead
+    // enquired about (effective value = min price, else max price). Leads whose
+    // property has no known value are excluded once a bound is set.
+    if (filter.propMinValue != null || filter.propMaxValue != null) {
+      const effVal = (c: MarketLeadCard): number | null => {
+        if (c.minPrice != null && c.minPrice > 0) return c.minPrice;
+        if (c.maxPrice != null && c.maxPrice > 0) return c.maxPrice;
+        return null;
+      };
+      cards = cards.filter((c) => {
+        const v = effVal(c);
+        if (v == null) return false;
+        if (filter.propMinValue != null && v < filter.propMinValue) return false;
+        if (filter.propMaxValue != null && v > filter.propMaxValue) return false;
+        return true;
+      });
+    }
 
     switch (filter.sort) {
       case "price_low":
@@ -448,6 +498,8 @@ export class MarketplaceRepository {
         leadId: l.id as number,
         name: (l.name as string | null) ?? "—",
         propertyTitle: m?.title ?? null,
+        propertyType: m?.propertyType ?? m?.propertyCategory ?? null,
+        propertyValue: (m?.minPrice || m?.maxPrice) ?? null,
         city: m?.city ?? null,
         locality: m?.locality ?? null,
         source: (l.lead_source as string | null) ?? null,
@@ -528,6 +580,110 @@ export class MarketplaceRepository {
       updated_at: now,
     }));
     if (rows.length === 0) return 0;
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await db
+        .from("marketplace_listings")
+        .upsert(rows.slice(i, i + 500), { onConflict: "lead_id" });
+      if (error) throw new Error(error.message);
+    }
+    return rows.length;
+  }
+
+  /**
+   * Set (and list) a price on every lead whose PROPERTY matches the given
+   * filters — category, specific type, and/or a property-value range. Lets the
+   * admin re-price a slice of the marketplace (e.g. "all commercial leads for
+   * properties worth ₹1–5 Cr") in one action. Returns how many leads changed.
+   */
+  async setPriceForMatching(
+    price: number,
+    filter: {
+      category?: string;
+      propertyType?: string;
+      propMinPrice?: number;
+      propMaxPrice?: number;
+    },
+    adminId: string
+  ): Promise<number> {
+    const db = createServiceRoleClient();
+
+    // Leads-first: the leads table is small and bounded, whereas `properties`
+    // can be large (and a plain select() is capped at 1000 rows). So we start
+    // from leads, collect only the properties they reference, then filter those.
+    const { data: leadRows, error: lErr } = await db
+      .from("leads")
+      .select("id, property_id")
+      .not("property_id", "is", null)
+      .limit(10000);
+    if (lErr) throw new Error(lErr.message);
+
+    const leadsByProp = new Map<number, number[]>();
+    for (const l of leadRows ?? []) {
+      const pid = l.property_id as number | null;
+      if (pid == null) continue;
+      const arr = leadsByProp.get(pid);
+      if (arr) arr.push(l.id as number);
+      else leadsByProp.set(pid, [l.id as number]);
+    }
+    const propIds = [...leadsByProp.keys()];
+    if (propIds.length === 0) return 0;
+
+    // Fetch only the referenced properties (chunked by id) and apply filters.
+    // Category is filtered in the DB; type and value range are filtered in JS
+    // because the type can live in `available_property_types`, and the value is
+    // `price` OR (for projects, where price=0) `min_price`/`max_price`.
+    const wantType = filter.propertyType?.trim().toLowerCase();
+    const hasMin = filter.propMinPrice != null;
+    const hasMax = filter.propMaxPrice != null;
+    const matchedProps = new Set<number>();
+    for (let i = 0; i < propIds.length; i += 500) {
+      let q = db
+        .from("properties")
+        .select("id, property_type, available_property_types, property_category, price, min_price, max_price")
+        .in("id", propIds.slice(i, i + 500));
+      if (filter.category) q = q.eq("property_category", filter.category);
+      const { data: props, error } = await q;
+      if (error) throw new Error(error.message);
+      for (const p of props ?? []) {
+        if (wantType) {
+          const t = (
+            (p.property_type as string | null)?.trim() ||
+            (p.available_property_types as string | null)?.split(",")[0]?.trim() ||
+            ""
+          ).toLowerCase();
+          if (t !== wantType) continue;
+        }
+        if (hasMin || hasMax) {
+          // Effective property value: headline price, else the project range.
+          const value =
+            Number(p.price) > 0
+              ? Number(p.price)
+              : Number(p.min_price) > 0
+                ? Number(p.min_price)
+                : Number(p.max_price) || 0;
+          if (hasMin && value < filter.propMinPrice!) continue;
+          if (hasMax && value > filter.propMaxPrice!) continue;
+        }
+        matchedProps.add(p.id as number);
+      }
+    }
+    if (matchedProps.size === 0) return 0;
+
+    const leadIds: number[] = [];
+    for (const pid of matchedProps) {
+      for (const lid of leadsByProp.get(pid) ?? []) leadIds.push(lid);
+    }
+    if (leadIds.length === 0) return 0;
+
+    // Upsert the listing price for each matching lead.
+    const now = new Date().toISOString();
+    const rows = leadIds.map((lead_id) => ({
+      lead_id,
+      price,
+      active: true,
+      created_by: adminId,
+      updated_at: now,
+    }));
     for (let i = 0; i < rows.length; i += 500) {
       const { error } = await db
         .from("marketplace_listings")

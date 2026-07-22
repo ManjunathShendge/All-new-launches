@@ -3,9 +3,15 @@ import { getUserErrorMessage } from "@/lib/errors/user-message";
 
 import { LoginData, SignupData, AuthResponse } from "@/types/auth.types";
 
-const getBaseUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (typeof window !== "undefined" ? window.location.origin : "");
+// Base URL for auth email redirects. Trailing slashes are stripped so we never
+// build a malformed `…//auth` link — a double slash fails Supabase's redirect
+// allowlist match, which silently falls back to the dashboard Site URL.
+const getBaseUrl = () => {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "");
+  return raw.replace(/\/+$/, "");
+};
 
 export class AuthService {
   /**

@@ -26,12 +26,12 @@ function InfoCell({
   value: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <span className="flex items-center gap-1 text-xs text-muted">
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex items-center gap-1 text-[11px] text-muted">
         {icon}
         {label}
       </span>
-      <span className="truncate text-sm font-semibold text-foreground">
+      <span className="truncate text-[13px] font-semibold text-foreground">
         {value}
       </span>
     </div>
@@ -86,39 +86,39 @@ export default function PropertyCard({
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-1 text-lg font-semibold text-foreground">
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-1 text-base font-semibold text-foreground">
           {property.title}
         </h3>
 
         {location && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-            <MapPin size={14} className="shrink-0" />
+          <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted">
+            <MapPin size={13} className="shrink-0" />
             <span className="line-clamp-1">{location}</span>
           </p>
         )}
 
         {/* Info grid */}
-        <div className="mt-4 grid grid-cols-3 gap-3 border-y border-(--border) py-4">
+        <div className="mt-3 grid grid-cols-3 gap-2 border-y border-(--border) py-3">
           <InfoCell
-            icon={<Maximize size={13} />}
+            icon={<Maximize size={12} />}
             label="Config"
             value={formatConfiguration(property.configuration)}
           />
           <InfoCell
-            icon={<CalendarClock size={13} />}
+            icon={<CalendarClock size={12} />}
             label="Possession"
             value={formatPossession(property.possession)}
           />
           <InfoCell
-            icon={<ShieldCheck size={13} />}
+            icon={<ShieldCheck size={12} />}
             label="RERA"
             value={property.isVerified ? "Verified" : "N/A"}
           />
         </div>
 
         {/* Area */}
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-2.5 text-[13px] text-muted">
           Area:{" "}
           <span className="font-medium text-foreground">
             {formatAreaRange(property.minArea, property.maxArea)}
@@ -126,15 +126,15 @@ export default function PropertyCard({
         </p>
 
         {/* Price + CTA */}
-        <div className="mt-auto flex items-end justify-between pt-4">
-          <div>
+        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+          <div className="min-w-0">
             <span className="block text-xs text-muted">Price</span>
-            <span className="text-lg font-bold text-primary">
+            <span className="block whitespace-nowrap text-base font-bold text-primary">
               {formatPriceRange(property.minPrice, property.maxPrice)}
             </span>
           </div>
 
-          <span className="rounded-full bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-300 group-hover:bg-[#1D4ED8]">
+          <span className="shrink-0 rounded-full bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white transition-colors duration-300 group-hover:bg-[#1D4ED8]">
             View
           </span>
         </div>
