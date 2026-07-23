@@ -24,8 +24,8 @@ export default async function HomeSection() {
 
   return (
     <main>
-      <HeroSection />
       <PremiumShowcaseBanner showcase={showcase} />
+      <HeroSection />
       <CategoriesSection />
       <TrustSection />
       <FeaturedLaunches properties={featured} />
